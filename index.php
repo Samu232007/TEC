@@ -1,3 +1,4 @@
+<?php
 <html lang="en">
     <link rel="stylesheet" href="styles.css">
 <head>
