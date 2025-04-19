@@ -12,3 +12,5 @@ RewriteRule ^([^\.]+)$ $1.html [L]
     Order Allow,Deny
     Deny from all
 </Files>
+
+DirectoryIndex index.php
