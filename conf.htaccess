@@ -1,0 +1,14 @@
+RewriteEngine On
+
+# Si el archivo con extensión .php existe, úsalo
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([^\.]+)$ $1.php [L]
+
+# Si el archivo con extensión .html existe, úsalo
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^([^\.]+)$ $1.html [L]
+
+<Files "conexion.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
