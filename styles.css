@@ -16,54 +16,39 @@ body.dark-mode {
 /* Contenedor de los botones */
 .header-buttons {
     position: fixed;
-    top: 10px;
-    right: 15px;
+    top: 0;
+    right: 0;
+    height: 55px; /* Altura del contenedor */
     display: flex;
-    align-items: center;
+    justify-content: flex-end; /* Alinear a la derecha */
+    padding-right: 2%;
+    align-items: center; /* Centrar verticalmente */
     gap: 20px; /* Espacio entre los botones */
     z-index: 1000; /* Asegura que estén por encima de otros elementos */
+    background-color: #002855;
+    width: 100%;
 }
 
-/* Botón de cerrar sesión */
-.logout-button {
-    background-color: #e94242; /* Rojo para destacar */
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
-}
-
-.logout-button:hover {
-    background-color: #c53030; /* Rojo más oscuro al pasar el mouse */
-}
-
-.iniciar-sesión {
+.Iniciar-sesión {
     background-color: transparent;
     border: 3px solid white;
     color: white;
     padding: 7px 10px;
     transition: background-color 0.3s ease, color 0.3s ease; /* Transición suave */
+    right: 10px;
+    background-color: #002855;
+    color: white;
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 12px;
+    height: 40px; /* Altura del botón */
 }
 
 .iniciar-sesión:hover {
-    background-color: #004080; /* Fondo azul al pasar el mouse */
+    background-color: #ef3340; /* Fondo azul al pasar el mouse */
     color: white; /* Texto blanco */
-    border-color: #004080; /* Cambiar el borde al mismo azul */
-}
-
-/* Estilo para el tema claro */
-body:not(.dark-mode) .iniciar-sesión {
-    border-color: black; /* Contorno negro en modo claro */
-    color: black; /* Texto negro */
-}
-
-body:not(.dark-mode) .iniciar-sesión:hover {
-    background-color: #004080; /* Fondo azul al pasar el mouse */
-    color: white; /* Texto blanco */
-    border-color: #004080; /* Cambiar el borde al mismo azul */
+    border-color: #ef3340; /* Cambiar el borde al mismo azul */
 }
 
 
@@ -81,7 +66,12 @@ th {
     background-color: #002855;
 }
 
-button {
+th:not(.dark-mode) {
+    background-color: #002855;
+    color: white;
+}
+
+.button {
     background-color: #002855;
     border: none;
     color: white;
@@ -90,7 +80,6 @@ button {
     text-decoration: none;
     display: block; /* Cambiar a block para centrar */
     font-size: 16px;
-    margin: 20px auto; /* Centrar horizontalmente */
     cursor: pointer;
     border-radius: 12px;
 }
@@ -143,19 +132,20 @@ body.dark-mode .theme-switch {
     height: 30px; /* Altura del switch */
     top: 2px;
     right: 5px;
-    background-color: #ef3340; /* Fondo del switch */
+    background-color: #002855; /* Fondo del switch */
     border-radius: 15px; /* Bordes redondeados */
     position: relative;
     cursor: pointer;
     transition: background-color 0.3s ease; /* Transición del fondo */
-    border: 2px solid black; /* Borde negro por defecto */
+    border: 2px solid rgb(255, 255, 255); /* Borde negro por defecto */
     overflow: hidden; /* Ocultar cualquier desbordamiento */
 }
 
-body.dark-mode .theme-switch {
-    border: 2px solid white; /* Borde blanco en modo oscuro */
-    background-color: #002855;
+.theme-switch:hover {
+    box-shadow: 0 0 10px 2px #0a73db;
+    transition: box-shadow 0.3s ease; /* Transición suave */
 }
+
 
 /* Esfera que se mueve */
 .theme-switch .sphere {
@@ -240,6 +230,10 @@ body.dark-mode .theme-switch .sphere::before {
     background-color: #1e1e1e; /* Fondo del track igual al fondo de la terminal */
 }
 
+body::-webkit-scrollbar {
+    display: none;
+}
+
 /* Entrada de la terminal */
 .terminal-input {
     display: flex;
@@ -268,17 +262,6 @@ body.dark-mode .theme-switch .sphere::before {
     outline: none; /* Sin borde al enfocar */
 }
 
-/* Contenedor de los botones */
-.header-buttons {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px; /* Espacio entre los botones */
-    z-index: 1000; /* Asegura que estén por encima de otros elementos */
-}
-
 /* Botón de cerrar sesión */
 .logout-button {
     background-color: #ef3340; /* Rojo para destacar */
@@ -291,6 +274,7 @@ body.dark-mode .theme-switch .sphere::before {
     transition: background-color 0.3s ease;
     transition: opacity 0.3s ease transform 0.3s ease; /* Transición suave al mostrar */
 }
+
 
 .logout-button:hover {
     background-color: #c53030; /* Rojo más oscuro al pasar el mouse */
@@ -317,15 +301,14 @@ body.dark-mode .theme-switch .sphere::before {
 /* Botón de menú hamburguesa */
 .menu-toggle {
     position: fixed;
-    top: -5px;
-    left: 9px;
-    color: white;
+    left: 1%;
     border: none;
     padding: 3px 5px;
     cursor: pointer;
     border-radius: 5px;
     z-index: 1001; /* Asegura que esté por encima de otros elementos */
     transition: background-color 0.3s ease;
+    background-color: #002855;
 }
 
 .menu-toggle:hover {
@@ -337,12 +320,12 @@ body.dark-mode .theme-switch .sphere::before {
     position: fixed;
     top: 0;
     left: 0;
-    width: 60px; /* Ancho reducido cuando está oculta */
+    width: 0px; /* Ancho reducido cuando está oculta */
     height: 100%;
     background-color: #002855; /* Fondo del menú */
     color: white;
     padding: 10px 0; /* Espaciado vertical */
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     align-items: center; /* Centrar contenido horizontalmente */
@@ -448,6 +431,7 @@ body.dark-mode .theme-switch .sphere::before {
 
 /* Ajustar el contenido principal */
 .content {
+    margin-top: 2%;
     margin-left: 40px; /* Sin espacio cuando la barra lateral está oculta */
     padding: 20px;
     transition: margin-left 0.3s ease; /* Transición suave */
@@ -455,3 +439,80 @@ body.dark-mode .theme-switch .sphere::before {
 
 
 
+.dashboard {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+    padding: 20px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+}
+
+.card {
+    flex: 1 1 calc(33.333% - 20px);
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    min-width: 250px;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.card table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow-x: auto;
+}
+
+.card th, .card td {
+    padding: 10px;
+    text-align: left;
+    word-wrap: break-word;
+}
+
+.card th {
+    background-color: #002855;
+    color: white;
+}
+
+.card td {
+    background-color: #f9f9f9;
+}
+
+@media (max-width: 768px) {
+    .card {
+        flex: 1 1 100%;
+    }
+}
+
+@media (max-width: 1024px) {
+    .card {
+        flex: 1 1 100%;
+    }
+}
+
+/* Modo noche para el dashboard */
+body.dark-mode .dashboard {
+    background-color: #1e1e1e; /* Fondo oscuro */
+    border-radius: 8px;
+}
+
+/* Modo noche para las cartas */
+body.dark-mode .card {
+    background-color: #121212; /* Fondo oscuro para las cartas */
+    border-color: #121212;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5); /* Sombra más tenue */
+}
+
+body.dark-mode .card th {
+    border-color: #000000;
+}
+
+body.dark-mode .card td {
+    background-color: #161616; /* Fondo oscuro para las celdas */
+    color: #ffffff; /* Texto claro */
+    border-color: #121212;
+}

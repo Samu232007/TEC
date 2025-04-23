@@ -31,6 +31,16 @@ if (pg_num_rows($result) > 0) {
         $_SESSION['ID'] = null; // Si no se encuentra, asigna null
     }
 
+    $consulta2 = "SELECT id_grupo FROM estudiante_info WHERE ID_estudiante = '{$_SESSION['ID']}'";
+    $data2 = pg_query($conexion, $consulta2);
+
+    if ($data2 && pg_num_rows($data2) > 0) {
+        $ID_grupo = pg_fetch_assoc($data2);
+        $_SESSION['ID_grupo'] = $ID_grupo['id_grupo']; // Almacena el ID_grupo en la sesión
+    } else {
+        $_SESSION['ID_grupo'] = null; // Si no se encuentra, asigna null
+    }
+
     $user = pg_fetch_assoc($result);
     $_SESSION['rol'] = $user['rol'];
     $_SESSION['nombre'] = $user['nombre']; // Almacena el nombre de usuario
