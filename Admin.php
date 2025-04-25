@@ -19,11 +19,6 @@ if (!isset($_SESSION['rol']) || ($_SESSION['rol'] !== 'admin')) {
 
 <body>
 
-    <!-- Botón de menú hamburguesa -->
-    <button id="menu-toggle" class="menu-toggle">
-            <img src='https://i.postimg.cc/94ysdZ6j/menu.png' border='0' alt='menu' width='30' height='30'/>
-    </button>
-
     <!-- Menú lateral -->   
     <div class="sidebar">
             <h2>Menú</h2>
@@ -36,17 +31,21 @@ if (!isset($_SESSION['rol']) || ($_SESSION['rol'] !== 'admin')) {
                 <button class="logout-button">Cerrar sesión</button>
             </form>
     </div>
+    
+    <nav class="header-buttons">
+            <div class="theme-switch">
+                    <input type="checkbox" id="toggle-mode" />
+                        <label for="toggle-mode" class="switch">
+                            <div class="sphere"></div>
+                        </label>
+            </div>
+                <button id="menu-toggle" class="menu-toggle">
+                    <img src='https://i.postimg.cc/94ysdZ6j/menu.png' border='0' alt='menu' width='30' height='30'/>
+                </button>
+    </nav>  
 
     <!-- Contenido -->
     <div class="content">
-            <div class="header-buttons">
-                <div class="theme-switch">
-                    <input type="checkbox" id="toggle-mode" />
-                    <label for="toggle-mode" class="switch">
-                        <div class="sphere"></div>
-                    </label>
-                </div>
-    </div>
 
     <h2>Bienvenido <?php echo $_SESSION['nombre']; ?></h2>
     
