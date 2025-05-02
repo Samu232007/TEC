@@ -1,0 +1,2687 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.4
+-- Dumped by pg_dump version 17.4
+
+-- Started on 2025-05-02 14:02:13
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 256 (class 1255 OID 26346)
+-- Name: actualizar_estado_carreras(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.actualizar_estado_carreras() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Actualizar estado en tablas relacionadas
+    UPDATE Materias_carrera
+    SET Estado = NEW.Estado
+    WHERE ID_carrera = NEW.ID_carrera;
+
+    UPDATE Grupos
+    SET Estado = NEW.Estado
+    WHERE ID_carrera = NEW.ID_carrera;
+
+    UPDATE Calificaciones
+    SET Estado = NEW.Estado
+    WHERE Carrera = NEW.ID_carrera;
+
+    UPDATE Docente_info
+    SET Estado = NEW.Estado
+    WHERE ID_carrera = NEW.ID_carrera;
+
+    UPDATE Estudiante_info
+    SET Estado = NEW.Estado
+    WHERE ID_carrera = NEW.ID_carrera;
+
+    UPDATE Sedes_info
+    SET Estado = NEW.Estado
+    WHERE ID_carrera = NEW.ID_carrera;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_estado_carreras() OWNER TO postgres;
+
+--
+-- TOC entry 257 (class 1255 OID 26347)
+-- Name: actualizar_estado_departamentos(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.actualizar_estado_departamentos() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Actualizar estado en tablas relacionadas
+    UPDATE Carreras
+    SET Estado = NEW.Estado
+    WHERE Departamento = NEW.ID_departamento;
+
+    UPDATE Docente_info
+    SET Estado = NEW.Estado
+    WHERE ID_departamento = NEW.ID_departamento;
+
+    UPDATE Estudiante_info
+    SET Estado = NEW.Estado
+    WHERE ID_departamento = NEW.ID_departamento;
+
+    UPDATE Sedes_info
+    SET Estado = NEW.Estado
+    WHERE ID_departamento = NEW.ID_departamento;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_estado_departamentos() OWNER TO postgres;
+
+--
+-- TOC entry 258 (class 1255 OID 26348)
+-- Name: actualizar_estado_materias(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.actualizar_estado_materias() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Actualizar estado en tablas relacionadas
+    UPDATE Materias_carrera
+    SET Estado = NEW.Estado
+    WHERE ID_materia = NEW.ID_materia;
+
+    UPDATE Horarios
+    SET Estado = NEW.Estado
+    WHERE ID_materia = NEW.ID_materia;
+
+    UPDATE Calificaciones
+    SET Estado = NEW.Estado
+    WHERE Materia = NEW.ID_materia;
+
+    UPDATE Docente_info
+    SET Estado = NEW.Estado
+    WHERE ID_materia = NEW.ID_materia;
+
+    UPDATE Estudiante_info
+    SET Estado = NEW.Estado
+    WHERE ID_materia = NEW.ID_materia;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_estado_materias() OWNER TO postgres;
+
+--
+-- TOC entry 259 (class 1255 OID 26349)
+-- Name: actualizar_estado_sedes(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.actualizar_estado_sedes() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Actualizar estado en tablas relacionadas
+    UPDATE Personal_Administrativo
+    SET Estado = NEW.Estado
+    WHERE ID_sede = NEW.ID_sede;
+
+    UPDATE Bienes
+    SET Estado = NEW.Estado
+    WHERE ID_sede = NEW.ID_sede;
+
+    UPDATE Grupos
+    SET Estado = NEW.Estado
+    WHERE ID_sede = NEW.ID_sede;
+
+    UPDATE Horarios
+    SET Estado = NEW.Estado
+    WHERE ID_sede = NEW.ID_sede;
+
+    UPDATE Docente_info
+    SET Estado = NEW.Estado
+    WHERE ID_sede = NEW.ID_sede;
+
+    UPDATE Estudiante_info
+    SET Estado = NEW.Estado
+    WHERE ID_sede = NEW.ID_sede;
+
+    UPDATE Sedes_info
+    SET Estado = NEW.Estado
+    WHERE ID_sede = NEW.ID_sede;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_estado_sedes() OWNER TO postgres;
+
+--
+-- TOC entry 272 (class 1255 OID 26350)
+-- Name: insertar_calificaciones(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insertar_calificaciones() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    docente_id INTEGER;
+BEGIN
+    -- Buscar el ID_docente correspondiente a la combinaci¢n de carrera, materia y grupo
+    SELECT ID_docente
+    INTO docente_id
+    FROM Docente_info
+    WHERE ID_carrera = NEW.ID_carrera
+      AND ID_materia = NEW.ID_materia
+      AND ID_grupo = NEW.ID_grupo
+    LIMIT 1;
+
+    IF docente_id IS NULL THEN
+    RAISE EXCEPTION 'No se encontr¢ un docente para la combinaci¢n de carrera, materia y grupo.';
+    END IF;
+
+    -- Insertar un nuevo registro en la tabla Calificaciones
+    INSERT INTO Calificaciones (
+        ID_estudiante,
+        ID_docente,
+        ID_carrera,
+        ID_materia,
+        Cuatrimestre,
+        ID_grupo,
+        Curso_lectivo
+    )
+    VALUES (
+        NEW.ID_estudiante, -- ID del estudiante
+        docente_id,        -- ID del docente correspondiente
+        NEW.ID_carrera,    -- Carrera del estudiante
+        NEW.ID_materia,    -- Materia asignada
+        NEW.Cuatrimestre,  -- Cuatrimestre del estudiante
+        NEW.ID_grupo,      -- Grupo asignado
+        NEW.Curso_lectivo  -- Curso lectivo del estudiante
+    );
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.insertar_calificaciones() OWNER TO postgres;
+
+--
+-- TOC entry 271 (class 1255 OID 26351)
+-- Name: sincronizar_empleados(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.sincronizar_empleados() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Insertar o actualizar datos en la tabla Empleados
+    INSERT INTO Empleados (Num_cedula, Nombre, Apellidos, Tipo, Estado)
+    VALUES (
+        NEW.Num_cedula,
+        NEW.Nombre,
+        NEW.Apellidos,
+        TG_TABLE_NAME, -- El nombre de la tabla que activ¢ el trigger ('Docente' o 'Administrativo')
+        NEW.Estado
+    )
+    ON CONFLICT (Num_cedula) DO UPDATE
+    SET 
+        Nombre = EXCLUDED.Nombre,
+        Apellidos = EXCLUDED.Apellidos,
+        Tipo = TG_TABLE_NAME,
+        Estado = EXCLUDED.Estado;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.sincronizar_empleados() OWNER TO postgres;
+
+--
+-- TOC entry 273 (class 1255 OID 26352)
+-- Name: sincronizar_usuario(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.sincronizar_usuario() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Insertar o actualizar el usuario en la tabla Usuarios
+    INSERT INTO Usuarios (Usuario, Rol, Nombre, Estado)
+    VALUES (
+        NEW.Correo, -- Usar el correo del registro como usuario
+        TG_TABLE_NAME, -- El nombre de la tabla que activ¢ el trigger ('Estudiantes', 'Docentes', 'Administrativo')
+        NEW.Nombre, -- Nombre del usuario
+        'Activo'
+    )
+    ON CONFLICT (Usuario) DO UPDATE
+    SET 
+        Usuario = EXCLUDED.Usuario, -- Actualizar el correo si cambia
+        Rol = EXCLUDED.Rol, -- Asegurar que el rol est‚ actualizado
+        Nombre = EXCLUDED.Nombre, -- Actualizar el nombre si cambia
+        Estado = EXCLUDED.Estado; -- Actualizar el estado si cambia
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.sincronizar_usuario() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 217 (class 1259 OID 26353)
+-- Name: administrativo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.administrativo (
+    num_cedula integer NOT NULL,
+    nombre character varying,
+    apellidos character varying,
+    sede integer,
+    puesto character varying,
+    correo character varying,
+    num_telefono integer,
+    direccion character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.administrativo OWNER TO postgres;
+
+--
+-- TOC entry 218 (class 1259 OID 26359)
+-- Name: aulas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.aulas (
+    id_aula integer NOT NULL,
+    aula character varying,
+    id_sede integer,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.aulas OWNER TO postgres;
+
+--
+-- TOC entry 219 (class 1259 OID 26365)
+-- Name: becas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.becas (
+    id_beca integer NOT NULL,
+    nivel integer,
+    tipo character varying,
+    monto character varying,
+    descripcion character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.becas OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 26371)
+-- Name: becas_estudiante; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.becas_estudiante (
+    id integer NOT NULL,
+    id_estudiante integer,
+    id_beca integer,
+    fecha_asignacion date,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.becas_estudiante OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1259 OID 26377)
+-- Name: becas_estudiante_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.becas_estudiante ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.becas_estudiante_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 222 (class 1259 OID 26378)
+-- Name: becas_id_beca_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.becas ALTER COLUMN id_beca ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.becas_id_beca_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 223 (class 1259 OID 26379)
+-- Name: bienes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.bienes (
+    id_producto integer NOT NULL,
+    nombre character varying,
+    categoria character varying,
+    id_sede integer,
+    valor character varying,
+    descripcion character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.bienes OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 26385)
+-- Name: bienes_id_producto_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.bienes ALTER COLUMN id_producto ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.bienes_id_producto_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 225 (class 1259 OID 26386)
+-- Name: calendario_institucional; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.calendario_institucional (
+    id integer NOT NULL,
+    evento character varying,
+    fecha date,
+    id_sede integer,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.calendario_institucional OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1259 OID 26392)
+-- Name: calendario_institucional_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.calendario_institucional ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.calendario_institucional_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 227 (class 1259 OID 26393)
+-- Name: calificaciones; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.calificaciones (
+    id integer NOT NULL,
+    id_estudiante integer,
+    id_docente integer,
+    id_carrera integer,
+    id_materia integer,
+    cuatrimestre integer,
+    id_grupo integer,
+    curso_lectivo character varying,
+    nota numeric,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.calificaciones OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1259 OID 26399)
+-- Name: calificaciones_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.calificaciones ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.calificaciones_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 229 (class 1259 OID 26400)
+-- Name: carreras; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.carreras (
+    id_carrera integer NOT NULL,
+    nombre character varying,
+    duracion character varying,
+    inversion character varying,
+    descripcion character varying,
+    perfil_salida character varying,
+    departamento integer,
+    planes_de_estudio character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.carreras OWNER TO postgres;
+
+--
+-- TOC entry 230 (class 1259 OID 26406)
+-- Name: carreras_id_carrera_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.carreras ALTER COLUMN id_carrera ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.carreras_id_carrera_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 231 (class 1259 OID 26407)
+-- Name: departamentos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.departamentos (
+    id_departamento integer NOT NULL,
+    nombre character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.departamentos OWNER TO postgres;
+
+--
+-- TOC entry 232 (class 1259 OID 26413)
+-- Name: departamentos_id_departamento_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.departamentos ALTER COLUMN id_departamento ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.departamentos_id_departamento_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 233 (class 1259 OID 26414)
+-- Name: docente; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.docente (
+    num_cedula integer NOT NULL,
+    nombre character varying,
+    apellidos character varying,
+    num_telefono integer,
+    correo character varying,
+    direccion character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.docente OWNER TO postgres;
+
+--
+-- TOC entry 234 (class 1259 OID 26420)
+-- Name: docente_info; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.docente_info (
+    id integer NOT NULL,
+    id_docente integer,
+    id_materia integer,
+    id_carrera integer,
+    id_grupo integer,
+    id_departamento integer,
+    id_sede integer,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.docente_info OWNER TO postgres;
+
+--
+-- TOC entry 235 (class 1259 OID 26426)
+-- Name: docente_info_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.docente_info ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.docente_info_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 236 (class 1259 OID 26427)
+-- Name: empleados; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.empleados (
+    num_cedula integer NOT NULL,
+    nombre character varying,
+    apellidos character varying,
+    tipo character varying NOT NULL,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.empleados OWNER TO postgres;
+
+--
+-- TOC entry 237 (class 1259 OID 26433)
+-- Name: estudiante; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.estudiante (
+    num_cedula integer NOT NULL,
+    nombre character varying,
+    apellidos character varying,
+    adecuacion character varying,
+    correo character varying,
+    num_telefono integer,
+    direccion character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.estudiante OWNER TO postgres;
+
+--
+-- TOC entry 238 (class 1259 OID 26439)
+-- Name: estudiante_info; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.estudiante_info (
+    id integer NOT NULL,
+    id_estudiante integer,
+    id_departamento integer,
+    id_carrera integer,
+    id_materia integer,
+    id_grupo integer,
+    cuatrimestre integer,
+    id_sede integer,
+    curso_lectivo character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.estudiante_info OWNER TO postgres;
+
+--
+-- TOC entry 239 (class 1259 OID 26445)
+-- Name: estudiante_info_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.estudiante_info ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.estudiante_info_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 240 (class 1259 OID 26446)
+-- Name: grupos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.grupos (
+    id_grupo integer NOT NULL,
+    grupo character varying NOT NULL,
+    id_carrera integer,
+    cuatrimestre character varying,
+    id_sede integer,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.grupos OWNER TO postgres;
+
+--
+-- TOC entry 241 (class 1259 OID 26452)
+-- Name: grupos_id_grupo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.grupos ALTER COLUMN id_grupo ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.grupos_id_grupo_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 242 (class 1259 OID 26453)
+-- Name: horarios; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.horarios (
+    id_horario integer NOT NULL,
+    id_grupo integer NOT NULL,
+    id_materia integer NOT NULL,
+    id_docente integer NOT NULL,
+    dia character varying NOT NULL,
+    hora_inicio time without time zone NOT NULL,
+    hora_fin time without time zone NOT NULL,
+    id_sede integer,
+    id_aula integer,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.horarios OWNER TO postgres;
+
+--
+-- TOC entry 243 (class 1259 OID 26459)
+-- Name: horarios_id_horario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.horarios ALTER COLUMN id_horario ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.horarios_id_horario_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 244 (class 1259 OID 26460)
+-- Name: materias; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.materias (
+    id_materia integer NOT NULL,
+    nombre_materia character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.materias OWNER TO postgres;
+
+--
+-- TOC entry 245 (class 1259 OID 26466)
+-- Name: materias_carrera; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.materias_carrera (
+    id_carrera integer NOT NULL,
+    id_materia integer NOT NULL,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.materias_carrera OWNER TO postgres;
+
+--
+-- TOC entry 246 (class 1259 OID 26472)
+-- Name: materias_id_materia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.materias ALTER COLUMN id_materia ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.materias_id_materia_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 247 (class 1259 OID 26473)
+-- Name: registro_pagos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.registro_pagos (
+    id_pago integer NOT NULL,
+    fecha_pago date,
+    num_cedula integer,
+    horas_extra numeric,
+    bonos character varying,
+    monto character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.registro_pagos OWNER TO postgres;
+
+--
+-- TOC entry 248 (class 1259 OID 26479)
+-- Name: registro_pagos_id_pago_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.registro_pagos ALTER COLUMN id_pago ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.registro_pagos_id_pago_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 249 (class 1259 OID 26480)
+-- Name: salarios; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.salarios (
+    num_cedula integer NOT NULL,
+    puesto character varying,
+    salario character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.salarios OWNER TO postgres;
+
+--
+-- TOC entry 250 (class 1259 OID 26486)
+-- Name: sedes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.sedes (
+    id_sede integer NOT NULL,
+    nombre_sede character varying,
+    provincia character varying,
+    horario character varying,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.sedes OWNER TO postgres;
+
+--
+-- TOC entry 251 (class 1259 OID 26492)
+-- Name: sedes_id_sede_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.sedes ALTER COLUMN id_sede ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.sedes_id_sede_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 252 (class 1259 OID 26493)
+-- Name: sedes_info; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.sedes_info (
+    id integer NOT NULL,
+    id_sede integer,
+    id_departamento integer,
+    id_carrera integer,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL
+);
+
+
+ALTER TABLE public.sedes_info OWNER TO postgres;
+
+--
+-- TOC entry 253 (class 1259 OID 26499)
+-- Name: sedes_info_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.sedes_info ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.sedes_info_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 254 (class 1259 OID 26500)
+-- Name: usuarios; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.usuarios (
+    id integer NOT NULL,
+    usuario character varying NOT NULL,
+    contrasena character varying DEFAULT 'TEC-1234'::character varying NOT NULL,
+    rol character varying NOT NULL,
+    estado character varying DEFAULT 'Activo'::character varying NOT NULL,
+    nombre character varying
+);
+
+
+ALTER TABLE public.usuarios OWNER TO postgres;
+
+--
+-- TOC entry 255 (class 1259 OID 26507)
+-- Name: usuarios_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.usuarios ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.usuarios_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 5115 (class 0 OID 26353)
+-- Dependencies: 217
+-- Data for Name: administrativo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.administrativo (num_cedula, nombre, apellidos, sede, puesto, correo, num_telefono, direccion, estado) FROM stdin;
+770438584	Alma	Riojas Arteaga	2	Secretario	alma15rioj@gmail.com	83552103	Peatonal Sur Olivas 625 Edif. 324 , Depto. 472, Nueva Sri Lanka, NL 687014626	Activo
+444775705	Elvira	Sotelo Haro	3	Secretario	elvi15sote@gmail.com	83465700	Peatonal Zacatecas 985 Interior 642, Vieja Rwanda, MEX 40785	Inactivo
+778275028	Roc¡o	Gonzales Crespo	4	Recepcionista	roc¡94gonz@gmail.com	83706110	Circuito Polonia 039 Edif. 652 , Depto. 239, San Jorge los altos, BC 992937842	Activo
+246546578	Mitzy	Archuleta Bustamante	3	Secretario	mitz40arch@gmail.com	83822145	Ampliacion Paraguay 059 Interior 325, Vieja Bangladesh, BC 92185	Activo
+295115416	Antonia	Ni¤o Ortiz	4	Recepcionista	anto19ni¤o@gmail.com	83033158	Continuacion Distrito Federal 675 289, San Esparta los altos, GRO 442209690	Activo
+623977532	Dulce	Zarate Mat¡as	4	Secretario	dulc29zara@gmail.com	83399841	Calle Norte Bernal 552 157, Vieja Eslovaquia, MICH 54100	Inactivo
+667414634	Judith	Quezada Perea	3	Encargado de laboratorio	judi31quez@gmail.com	83714620	Diagonal Norte Trevi¤o 179 Interior 327, Nueva Guyana, BC 411526218	Inactivo
+485731209	Aurelio	Mireles Villegas	2	Encargado de laboratorio	aure68mire@gmail.com	83861551	Viaducto Sur Zepeda 201 Interior 533, San Perla los altos, MOR 431069872	Inactivo
+174672463	Ana	Muro Acosta	2	Encargado de laboratorio	ana15muro@gmail.com	83399583	Viaducto Yucat n 103 241, San Camilo los bajos, SON 741862565	Activo
+285267243	Eduardo	Ram¡rez Armend riz	2	Secretario	edua74ram¡@gmail.com	83030992	Circuito Sur Jim‚nez 021 Edif. 158 , Depto. 693, Vieja Papua Nueva Guinea, TAB 937416089	Activo
+\.
+
+
+--
+-- TOC entry 5116 (class 0 OID 26359)
+-- Dependencies: 218
+-- Data for Name: aulas; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.aulas (id_aula, aula, id_sede, estado) FROM stdin;
+1	12-B-SC	3	Activo
+2	34-F-CA	1	Activo
+3	17-A-CA	1	Activo
+4	28-J-AL	5	Activo
+5	34-J-AL	5	Activo
+6	34-F-CA	1	Activo
+7	17-J-SJ	2	Activo
+8	36-C-CA	1	Activo
+9	36-B-SC	3	Activo
+10	29-A-CA	1	Activo
+11	10-I-LI	4	Activo
+12	30-J-CA	1	Activo
+13	14-G-AL	5	Activo
+14	13-D-CA	1	Activo
+15	14-J-CA	1	Activo
+16	26-I-AL	5	Activo
+17	30-I-CA	1	Activo
+18	23-A-CA	1	Activo
+19	18-D-CA	1	Activo
+20	16-C-SJ	2	Activo
+\.
+
+
+--
+-- TOC entry 5117 (class 0 OID 26365)
+-- Dependencies: 219
+-- Data for Name: becas; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.becas (id_beca, nivel, tipo, monto, descripcion, estado) FROM stdin;
+1	2	Deportiva	?175773	Beca deportiva nivel 2	Activo
+2	2	Socioeconomica	?241697	Beca socioeconomica nivel 2	Activo
+3	1	Socioeconomica	?254519	Beca socioeconomica nivel 1	Activo
+4	1	M‚ritos Acad‚micos	?105500	Beca m‚ritos acad‚micos nivel 1	Activo
+5	3	Socioeconomica	?110565	Beca socioeconomica nivel 3	Activo
+\.
+
+
+--
+-- TOC entry 5118 (class 0 OID 26371)
+-- Dependencies: 220
+-- Data for Name: becas_estudiante; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.becas_estudiante (id, id_estudiante, id_beca, fecha_asignacion, estado) FROM stdin;
+1	411411713	5	2022-04-04	Activo
+2	290037611	2	2024-07-31	Inactivo
+3	411411713	5	2022-12-16	Activo
+4	125109101	1	2023-07-08	Activo
+5	314161851	4	2024-05-06	Activo
+6	671674324	5	2024-07-11	Activo
+7	196429264	1	2024-04-19	Inactivo
+8	282945772	4	2024-12-31	Inactivo
+9	669868899	4	2022-01-01	Inactivo
+10	264829415	2	2024-06-13	Activo
+11	467857629	4	2024-02-09	Inactivo
+12	582481850	3	2024-05-20	Activo
+13	492887122	2	2024-12-19	Activo
+14	335366039	5	2022-05-19	Activo
+15	540683945	2	2024-12-26	Activo
+16	653932261	1	2022-03-23	Inactivo
+17	377915039	1	2024-09-08	Activo
+18	377915039	1	2022-04-11	Inactivo
+19	653932261	4	2025-01-27	Activo
+20	583241864	2	2025-01-07	Inactivo
+\.
+
+
+--
+-- TOC entry 5121 (class 0 OID 26379)
+-- Dependencies: 223
+-- Data for Name: bienes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.bienes (id_producto, nombre, categoria, id_sede, valor, descripcion, estado) FROM stdin;
+1	Illo HP	Computadora	3	?499059	Equipo de tipo computadora para uso acad‚mico	Inactivo
+2	Quidem Epson	Computadora	1	?117987	Equipo de tipo computadora para uso acad‚mico	Inactivo
+3	Laborum Dell	Electronico	2	?121548	Equipo de tipo electronico para uso acad‚mico	Activo
+4	Neque Epson	Electronico	5	?405334	Equipo de tipo electronico para uso acad‚mico	Inactivo
+5	Fuga Lenovo	Computadora	2	?207258	Equipo de tipo computadora para uso acad‚mico	Activo
+6	Molestiae Lenovo	Electronico	1	?126429	Equipo de tipo electronico para uso acad‚mico	Inactivo
+7	Ullam Lenovo	Electronico	1	?384432	Equipo de tipo electronico para uso acad‚mico	Inactivo
+8	Placeat Epson	Mueble	5	?345745	Equipo de tipo mueble para uso acad‚mico	Inactivo
+9	Rem Dell	Mueble	3	?343374	Equipo de tipo mueble para uso acad‚mico	Activo
+10	Sequi Dell	Electronico	4	?479908	Equipo de tipo electronico para uso acad‚mico	Inactivo
+11	Pariatur Dell	Electronico	1	?475997	Equipo de tipo electronico para uso acad‚mico	Activo
+12	Amet HP	Mueble	2	?213308	Equipo de tipo mueble para uso acad‚mico	Activo
+13	Doloribus Epson	Computadora	5	?335904	Equipo de tipo computadora para uso acad‚mico	Inactivo
+14	Harum Lenovo	Mueble	5	?297757	Equipo de tipo mueble para uso acad‚mico	Inactivo
+15	Necessitatibus HP	Mueble	4	?368788	Equipo de tipo mueble para uso acad‚mico	Activo
+16	Dicta HP	Computadora	3	?242780	Equipo de tipo computadora para uso acad‚mico	Inactivo
+17	Sit Canon	Electronico	2	?319653	Equipo de tipo electronico para uso acad‚mico	Activo
+18	Sequi Lenovo	Electronico	2	?332140	Equipo de tipo electronico para uso acad‚mico	Activo
+19	Vero Canon	Computadora	2	?360064	Equipo de tipo computadora para uso acad‚mico	Inactivo
+20	Voluptate HP	Computadora	1	?135382	Equipo de tipo computadora para uso acad‚mico	Inactivo
+21	Natus Lenovo	Computadora	1	?217417	Equipo de tipo computadora para uso acad‚mico	Activo
+22	Amet Canon	Mueble	2	?112070	Equipo de tipo mueble para uso acad‚mico	Activo
+23	Nam Dell	Mueble	4	?474368	Equipo de tipo mueble para uso acad‚mico	Inactivo
+24	Iure Canon	Electronico	5	?161969	Equipo de tipo electronico para uso acad‚mico	Activo
+25	Voluptas Canon	Computadora	2	?111514	Equipo de tipo computadora para uso acad‚mico	Inactivo
+26	Ex HP	Electronico	4	?129893	Equipo de tipo electronico para uso acad‚mico	Activo
+27	Architecto Lenovo	Mueble	5	?472151	Equipo de tipo mueble para uso acad‚mico	Activo
+28	Pariatur Epson	Mueble	1	?466674	Equipo de tipo mueble para uso acad‚mico	Inactivo
+29	Fugiat Dell	Computadora	5	?437621	Equipo de tipo computadora para uso acad‚mico	Inactivo
+30	Minima Lenovo	Electronico	2	?67745	Equipo de tipo electronico para uso acad‚mico	Inactivo
+\.
+
+
+--
+-- TOC entry 5123 (class 0 OID 26386)
+-- Dependencies: 225
+-- Data for Name: calendario_institucional; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.calendario_institucional (id, evento, fecha, id_sede, estado) FROM stdin;
+4	Graduacion	2025-12-29	3	Activo
+12	Rally de Programacion	2025-11-12	3	Activo
+13	Simposio de Ingenier¡a	2025-10-25	2	Activo
+1	Ex menes II Parcial	2025-08-11	4	Activo
+2	Feria Estudiantil	2025-07-07	3	Activo
+3	Semana de Orientacion	2025-08-14	4	Activo
+5	Simulacro institucional	2025-05-09	5	Activo
+6	Festival Cultural	2025-06-12	1	Activo
+7	Semana TEC	2026-02-20	3	Activo
+8	Torneo Deportivo	2025-07-08	1	Activo
+9	Charlas de Tecnolog¡a	2025-07-23	2	Activo
+10	Semana de Bienestar	2025-06-05	2	Activo
+11	D¡a del Estudiante	2026-04-05	2	Activo
+14	Foro Ambiental	2026-04-13	3	Activo
+15	Feria de Proyectos	2026-05-18	5	Activo
+\.
+
+
+--
+-- TOC entry 5125 (class 0 OID 26393)
+-- Dependencies: 227
+-- Data for Name: calificaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.calificaciones (id, id_estudiante, id_docente, id_carrera, id_materia, cuatrimestre, id_grupo, curso_lectivo, nota, estado) FROM stdin;
+1	742022876	724126451	1	2	2	6	2025	\N	Activo
+2	742022876	461322329	1	3	2	6	2025	\N	Activo
+3	742022876	253676496	1	4	2	6	2025	\N	Activo
+4	711988178	724126451	1	2	2	6	2025	\N	Activo
+5	711988178	461322329	1	3	2	6	2025	\N	Activo
+6	711988178	253676496	1	4	2	6	2025	\N	Activo
+7	361466067	461322329	2	7	2	8	2025	\N	Activo
+8	361466067	362578186	2	3	2	8	2025	\N	Activo
+9	361466067	253676496	2	4	2	8	2025	\N	Activo
+10	641113544	461322329	2	7	2	8	2025	\N	Activo
+11	641113544	362578186	2	3	2	8	2025	\N	Activo
+12	641113544	253676496	2	4	2	8	2025	\N	Activo
+13	371889155	638272196	3	1	7	1	2025	\N	Activo
+14	371889155	724126451	3	2	7	1	2025	\N	Activo
+15	371889155	557696281	3	3	7	1	2025	\N	Activo
+16	411411713	638272196	3	1	7	1	2025	\N	Activo
+17	411411713	724126451	3	2	7	1	2025	\N	Activo
+18	411411713	557696281	3	3	7	1	2025	\N	Activo
+19	797152245	632382031	1	3	8	2	2025	\N	Activo
+20	797152245	461322329	1	2	8	2	2025	\N	Activo
+21	797152245	253676496	1	4	8	2	2025	\N	Activo
+22	288399049	632382031	1	3	8	2	2025	\N	Activo
+23	288399049	461322329	1	2	8	2	2025	\N	Activo
+24	288399049	253676496	1	4	8	2	2025	\N	Activo
+25	698648982	491049223	3	1	1	4	2025	\N	Activo
+26	698648982	461322329	3	2	1	4	2025	\N	Activo
+27	698648982	212284787	3	3	1	4	2025	\N	Activo
+28	258967037	491049223	3	1	1	4	2025	\N	Activo
+29	258967037	461322329	3	2	1	4	2025	\N	Activo
+30	258967037	212284787	3	3	1	4	2025	\N	Activo
+31	280886595	782158352	4	6	2	9	2025	\N	Activo
+32	280886595	461322329	4	2	2	9	2025	\N	Activo
+33	280886595	632382031	4	3	2	9	2025	\N	Activo
+34	470186832	632382031	1	3	3	7	2025	\N	Activo
+35	470186832	253676496	1	4	3	7	2025	\N	Activo
+36	470186832	782158352	1	6	3	7	2025	\N	Activo
+37	361337217	362578186	4	6	3	3	2025	\N	Activo
+38	361337217	488944853	4	7	3	3	2025	\N	Activo
+39	361337217	178802366	4	4	3	3	2025	\N	Activo
+40	224711331	491049223	3	1	1	4	2025	\N	Activo
+41	224711331	461322329	3	2	1	4	2025	\N	Activo
+42	224711331	212284787	3	3	1	4	2025	\N	Activo
+43	370899226	724126451	1	2	2	6	2025	\N	Activo
+44	370899226	461322329	1	3	2	6	2025	\N	Activo
+45	370899226	253676496	1	4	2	6	2025	\N	Activo
+46	143917350	638272196	4	1	6	5	2025	\N	Activo
+47	143917350	782158352	4	4	6	5	2025	\N	Activo
+48	143917350	488944853	4	6	6	5	2025	\N	Activo
+49	119990620	724126451	1	2	2	6	2025	\N	Activo
+50	119990620	461322329	1	3	2	6	2025	\N	Activo
+51	119990620	253676496	1	4	2	6	2025	\N	Activo
+\.
+
+
+--
+-- TOC entry 5127 (class 0 OID 26400)
+-- Dependencies: 229
+-- Data for Name: carreras; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.carreras (id_carrera, nombre, duracion, inversion, descripcion, perfil_salida, departamento, planes_de_estudio, estado) FROM stdin;
+1	Ingeniería en Computación	8 semestres	¢3022839	Formaci¢n integral en ciencias de la computaci¢n, con ‚nfasis en programaci¢n, estructuras de datos, bases de datos, redes y sistemas operativos.	Profesionales capaces de desarrollar, mantener y optimizar software, gestionar sistemas de informaci¢n y liderar proyectos tecnol¢gicos.	1	https://ejemplo.com/ingenieria_en_computacion	Activo
+2	Ingeniería Electrónica	8 semestres	¢2553230	Carrera orientada al dise¤o, an lisis y aplicaci¢n de sistemas electr¢nicos y tecnolog¡as embebidas para automatizaci¢n e innovaci¢n industrial.	Ingenieros preparados para dise¤ar, implementar y mantener sistemas electr¢nicos complejos en entornos industriales o tecnol¢gicos.	4	https://ejemplo.com/ingenieria_electronica	Activo
+3	Administración de Empresas	8 semestres	¢2536340	Programa enfocado en la gesti¢n estrat‚gica, financiera y operativa de organizaciones, con ‚nfasis en liderazgo y toma de decisiones.	Profesionales con habilidades para administrar recursos humanos, financieros y materiales en organizaciones p£blicas o privadas.	5	https://ejemplo.com/administracion_de_empresas	Activo
+4	Ingeniería en Mantenimiento Industrial	8 semestres	¢3502112	Formaci¢n t‚cnica en la gesti¢n, diagn¢stico y mantenimiento preventivo y correctivo de equipos industriales y sistemas mec nicos.	Profesionales capaces de planificar, implementar y mejorar procesos de mantenimiento en la industria manufacturera y productiva.	3	https://ejemplo.com/ingenieria_en_mantenimiento_industrial	Activo
+5	Ingeniería en Agronomía	8 semestres	¢3944504	Carrera orientada a la producci¢n agr¡cola sostenible, gesti¢n de cultivos y conservaci¢n del ambiente con enfoque cient¡fico.	Ingenieros agr¢nomos con habilidades para mejorar la productividad agropecuaria mediante el uso de tecnolog¡as y pr cticas sustentables.	2	https://ejemplo.com/ingenieria_en_agronomia	Activo
+\.
+
+
+--
+-- TOC entry 5129 (class 0 OID 26407)
+-- Dependencies: 231
+-- Data for Name: departamentos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.departamentos (id_departamento, nombre, estado) FROM stdin;
+2	Medicina	Activo
+3	Ciencias	Activo
+5	Ciencias Sociales	Activo
+1	Informática	Activo
+4	Electrónica	Activo
+\.
+
+
+--
+-- TOC entry 5131 (class 0 OID 26414)
+-- Dependencies: 233
+-- Data for Name: docente; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.docente (num_cedula, nombre, apellidos, num_telefono, correo, direccion, estado) FROM stdin;
+638272196	Benjam¡n	Ter n Escobar	83916603	benj39ter @gmail.com	Pasaje Burundi 785 Interior 969, San Rodrigo de la Monta¤a, Q. ROO 792499125	Activo
+724126451	Caridad	Griego Maga¤a	83825547	cari11grie@gmail.com	Calle Sinaloa 929 Interior 662, San Teresa los altos, GRO 74225	Activo
+491518074	Mar¡a del Carmen	Avil‚s Mu¤oz	83572490	mar¡18avil@gmail.com	Calzada Letonia 876 Edif. 767 , Depto. 721, Nueva Guinea Ecuatorial, BCS 384279788	Inactivo
+428168066	Bruno	Vega Carrera	83813296	brun46vega@gmail.com	Pasaje Trevi¤o 613 407, San Jaqueline de la Monta¤a, TLAX 33959	Inactivo
+557696281	Susana	Porras de Jes£s	83995875	susa30porr@gmail.com	Andador Rep£blica Democr tica del Congo 849 Interior 825, San Gregorio los altos, NAY 26042	Activo
+266626369	C‚sar	Haro Concepcion	83212640	c‚sa92haro@gmail.com	Peatonal Sur V‚lez 466 Edif. 711 , Depto. 684, San Mar¡a Elena los bajos, PUE 17518	Activo
+438208885	Leonel	Gamez Portillo	83472481	leon81game@gmail.com	Continuacion Nuevo Leon 892 Interior 975, Nueva Brasil, VER 12770	Activo
+461322329	Luis Miguel	Fierro Centeno	83966256	luis85fier@gmail.com	Avenida San Luis Potos¡ 152 Interior 064, Vieja Sud n, COL 03712	Inactivo
+632382031	Rosalia	Gast‚lum Solano	83683373	rosa44gast@gmail.com	Continuacion Cas rez 271 Interior 361, Nueva Indonesia, SLP 262218909	Activo
+362578186	Violeta	de Anda Qui¤onez	83261600	viol64de a@gmail.com	Eje vial Santo Tom‚ y Pr¡ncipe 731 Edif. 121 , Depto. 965, San Ignacio de la Monta¤a, MICH 138999404	Activo
+366995378	Emiliano	Sisneros Zepeda	83570793	emil74sisn@gmail.com	Viaducto Campeche 761 379, Nueva Kazajst n, PUE 69658	Activo
+178802366	D‚bora	Rodr¡guez Beltr n	83995877	d‚bo10rodr@gmail.com	Circuito Galv n 068 486, San Karla de la Monta¤a, DGO 141832856	Activo
+253676496	Rodrigo	Barraza Mar¡n	83509390	rodr75barr@gmail.com	Cerrada Brise¤o 179 Interior 904, Nueva Andorra, DF 27588	Inactivo
+782158352	Francisco Javier	de la Cr£z Nieto	83083339	fran41de l@gmail.com	Ampliacion Meza 481 Interior 491, San Mar¡a Eugenia los altos, SLP 79252	Activo
+491049223	Florencia	Candelaria Vela	83018269	flor23cand@gmail.com	Andador Alcala 075 622, Vieja Estonia, PUE 65419	Inactivo
+488944853	Jos‚ Emilio	Casares Sandoval	83758425	jos‚72casa@gmail.com	Perif‚rico Austria 174 Interior 451, San Abril los bajos, HGO 949375973	Inactivo
+429636677	Patricio	Guillen Corona	83829409	patr91guil@gmail.com	Cerrada Toro 050 Interior 641, Nueva Malawi, ZAC 24103	Activo
+555376930	Nicol s	Paz Nieves	83718811	nico22paz@gmail.com	Perif‚rico Cepeda 619 Edif. 906 , Depto. 234, San Ignacio los bajos, PUE 743132912	Inactivo
+212284787	Bernab‚	de Anda Rascon	83359721	bern94de a@gmail.com	Boulevard Norte Franco 474 Interior 112, San Salvador de la Monta¤a, JAL 213568044	Inactivo
+244494033	Delia	Angulo Palacios	83200263	deli32angu@gmail.com	Pasaje Canales 100 323, San Jos‚ Emilio los altos, COL 101372151	Inactivo
+\.
+
+
+--
+-- TOC entry 5132 (class 0 OID 26420)
+-- Dependencies: 234
+-- Data for Name: docente_info; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.docente_info (id, id_docente, id_materia, id_carrera, id_grupo, id_departamento, id_sede, estado) FROM stdin;
+18	638272196	1	3	1	5	1	Activo
+19	724126451	2	3	1	5	1	Activo
+20	557696281	3	3	1	5	1	Activo
+21	632382031	3	1	2	1	3	Activo
+22	461322329	2	1	2	1	3	Activo
+23	253676496	4	1	2	1	3	Activo
+24	362578186	6	4	3	3	3	Activo
+25	488944853	7	4	3	3	3	Activo
+26	178802366	4	4	3	3	3	Activo
+27	491049223	1	3	4	5	1	Activo
+28	461322329	2	3	4	5	1	Activo
+29	212284787	3	3	4	5	1	Activo
+30	638272196	1	4	5	3	2	Activo
+31	782158352	4	4	5	3	2	Activo
+32	488944853	6	4	5	3	2	Activo
+33	724126451	2	1	6	1	5	Activo
+34	461322329	3	1	6	1	5	Activo
+35	253676496	4	1	6	1	5	Activo
+36	632382031	3	1	7	1	3	Activo
+37	253676496	4	1	7	1	3	Activo
+38	782158352	6	1	7	1	3	Activo
+39	461322329	7	2	8	4	5	Activo
+40	362578186	3	2	8	4	5	Activo
+41	253676496	4	2	8	4	5	Activo
+42	782158352	6	4	9	3	2	Activo
+43	461322329	2	4	9	3	2	Activo
+44	632382031	3	4	9	3	2	Activo
+\.
+
+
+--
+-- TOC entry 5134 (class 0 OID 26427)
+-- Dependencies: 236
+-- Data for Name: empleados; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.empleados (num_cedula, nombre, apellidos, tipo, estado) FROM stdin;
+638272196	Benjam¡n	Ter n Escobar	docente	Activo
+724126451	Caridad	Griego Maga¤a	docente	Activo
+491518074	Mar¡a del Carmen	Avil‚s Mu¤oz	docente	Inactivo
+428168066	Bruno	Vega Carrera	docente	Inactivo
+557696281	Susana	Porras de Jes£s	docente	Activo
+266626369	C‚sar	Haro Concepcion	docente	Activo
+438208885	Leonel	Gamez Portillo	docente	Activo
+461322329	Luis Miguel	Fierro Centeno	docente	Inactivo
+632382031	Rosalia	Gast‚lum Solano	docente	Activo
+362578186	Violeta	de Anda Qui¤onez	docente	Activo
+366995378	Emiliano	Sisneros Zepeda	docente	Activo
+178802366	D‚bora	Rodr¡guez Beltr n	docente	Activo
+253676496	Rodrigo	Barraza Mar¡n	docente	Inactivo
+782158352	Francisco Javier	de la Cr£z Nieto	docente	Activo
+491049223	Florencia	Candelaria Vela	docente	Inactivo
+488944853	Jos‚ Emilio	Casares Sandoval	docente	Inactivo
+429636677	Patricio	Guillen Corona	docente	Activo
+555376930	Nicol s	Paz Nieves	docente	Inactivo
+212284787	Bernab‚	de Anda Rascon	docente	Inactivo
+244494033	Delia	Angulo Palacios	docente	Inactivo
+770438584	Alma	Riojas Arteaga	administrativo	Activo
+444775705	Elvira	Sotelo Haro	administrativo	Inactivo
+778275028	Roc¡o	Gonzales Crespo	administrativo	Activo
+246546578	Mitzy	Archuleta Bustamante	administrativo	Activo
+295115416	Antonia	Ni¤o Ortiz	administrativo	Activo
+623977532	Dulce	Zarate Mat¡as	administrativo	Inactivo
+667414634	Judith	Quezada Perea	administrativo	Inactivo
+485731209	Aurelio	Mireles Villegas	administrativo	Inactivo
+174672463	Ana	Muro Acosta	administrativo	Activo
+285267243	Eduardo	Ram¡rez Armend riz	administrativo	Activo
+\.
+
+
+--
+-- TOC entry 5135 (class 0 OID 26433)
+-- Dependencies: 237
+-- Data for Name: estudiante; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.estudiante (num_cedula, nombre, apellidos, adecuacion, correo, num_telefono, direccion, estado) FROM stdin;
+742022876	Timoteo	Carrasco Alvarado	No	timo55carr@gmail.com	83387311	Calle Venezuela 819 600, Nueva ex Rep£blica Yugoslava de Macedonia, BC 86379	Activo
+641113544	oscar	Castillo Cazares	No	osca68cast@gmail.com	83479156	Perif‚rico Tamaulipas 834 657, San Carla de la Monta¤a, MEX 50983	Activo
+358094144	Leonardo	Ceja Mac¡as	No	leon28ceja@gmail.com	83708861	Ampliacion Reynoso 911 Edif. 838 , Depto. 425, Nueva Kirguist n, NL 78498	Egresado
+257297640	Abril	Urrutia Luna	No	abri49urru@gmail.com	83597649	Boulevard Chiapas 824 Edif. 493 , Depto. 534, San Fidel de la Monta¤a, COL 400524278	Inactivo
+653063173	Luis	Valent¡n Aguirre	No	luis31vale@gmail.com	83758460	Privada Armenia 982 Interior 620, San Jos‚ de la Monta¤a, Q. ROO 31586	Egresado
+553724069	Citlali	Corona Godoy	No	citl25coro@gmail.com	83109828	Avenida Malasia 587 Interior 603, San Julio los altos, BC 705466889	Inactivo
+288399049	Mario	Carrero Valle	No	mari22carr@gmail.com	83295293	Corredor Guanajuato 912 Edif. 419 , Depto. 049, San Leonel los altos, HGO 93149	Activo
+615196363	Carla	Valles Arguello	No	carl51vall@gmail.com	83542528	Avenida Quer‚taro 671 657, Vieja Dinamarca, NAY 769453147	Egresado
+375634295	Guillermo	Apodaca Gomez	No	guil89apod@gmail.com	83155452	Avenida Sur Jaime 936 Edif. 183 , Depto. 242, Nueva C“te dïIvoire, OAX 717464887	Inactivo
+671674324	Delia	Berr¡os Olivas	No	deli65berr@gmail.com	83053796	Cerrada Montenegro 474 Edif. 074 , Depto. 821, San Jaime los altos, OAX 474367136	Inactivo
+720636424	Reina	Mu¤oz Velasco	No	rein39mu¤o@gmail.com	83189474	Diagonal Laureano 909 743, San Estefan¡a los altos, HGO 210470952	Activo
+369579084	Bernardo	V‚lez Sarabia	No	bern53v‚le@gmail.com	83154932	Cerrada Sur Montez 514 Edif. 936 , Depto. 899, Vieja Argelia, GRO 455022961	Activo
+262775155	Claudia	Angulo Bustos	No	clau54angu@gmail.com	83026407	Pasaje Norte Cotto 459 Interior 910, Nueva San Vicente y las Granadinas, CAMP 47679	Egresado
+698648982	Margarita	Pedroza Laboy	No	marg86pedr@gmail.com	83892862	Eje vial Chihuahua 978 Interior 403, San Rufino de la Monta¤a, AGS 43244	Activo
+195636234	Itzel	Casares Aguilar	No	itze72casa@gmail.com	83663791	Calle Lesotho 388 Edif. 516 , Depto. 060, San Araceli los bajos, TAMPS 641605297	Inactivo
+582481850	Jos	Bueno Quesada	No	jos64buen@gmail.com	83537686	Prolongacion Norte Soria 645 352, Nueva Per£, HGO 523124329	Inactivo
+280886595	Ivonne	Zamora µvila	No	ivon23zamo@gmail.com	83471542	Boulevard Sinaloa 492 Interior 519, Vieja India, SON 91486	Activo
+552267441	Trinidad	M‚ndez Cavazos	No	trin50m‚nd@gmail.com	83029095	Ampliacion San Luis Potos¡ 235 Interior 733, Nueva Belice, NL 88805	Inactivo
+370899226	Cecilia	Armend riz Mora	No	ceci52arme@gmail.com	83501088	Peatonal Sur Cerv ntez 704 303, Vieja India, SON 403450541	Activo
+721004891	Luis	de la Cr£z Quiroz	No	luis29de l@gmail.com	83426411	Corredor Puga 016 Interior 582, Nueva San Marino, TLAX 21355	Egresado
+653932261	Clara	Granado Salcido	No	clar60gran@gmail.com	83286638	Pasaje Distrito Federal 114 Edif. 678 , Depto. 669, Nueva Ir n, COAH 785289226	Activo
+430426031	Salma	Miranda Valle	No	salm82mira@gmail.com	83091568	Andador Vel zquez 396 Interior 907, San Tom s los bajos, YUC 64710	Egresado
+276972810	Cristina	Qui¤onez Pelayo	No	cris43qui¤@gmail.com	83320816	Continuacion San Marino 555 625, Vieja Fiji, VER 47321	Activo
+492887122	Juan	Cordero Guerra	No	juan84cord@gmail.com	83979573	Ampliacion Mauricio 626 Interior 368, San Anel los altos, DF 85786	Egresado
+551904454	Humberto	Delgadillo Rico	No	humb85delg@gmail.com	83304902	Retorno Yucat n 348 434, San Emilio los altos, ZAC 758441986	Activo
+427581080	Benito	Pedraza Men‚ndez	No	beni25pedr@gmail.com	83126068	Ampliacion Rep£blica µrabe Siria 677 345, San Veronica de la Monta¤a, COL 80262	Inactivo
+445913862	Delia	Palomino Ponce	No	deli31palo@gmail.com	83538818	Boulevard Sur Cintron 530 Interior 463, San Gabriela los bajos, OAX 45301	Activo
+498314438	oliver	Cavazos Garica	No	oliv46cava@gmail.com	83653398	Pasaje Tamaulipas 633 Edif. 752 , Depto. 431, Vieja Santo Tom‚ y Pr¡ncipe, BC 31190	Egresado
+540317934	Marisela	Zamora Arriaga	No	mari67zamo@gmail.com	83256787	Pasaje Sur Tirado 028 439, San Reynaldo los altos, PUE 42836	Inactivo
+530493050	Helena	Laureano Ballesteros	No	hele69laur@gmail.com	83496374	Andador Norte Oliv rez 566 Edif. 246 , Depto. 287, Nueva Hait¡, DGO 086688263	Egresado
+498989161	Lorena	Lucero Corral	No	lore39luce@gmail.com	83096714	Diagonal Rep£blica Democr tica del Congo 785 477, San Dar¡o los altos, Q. ROO 28728	Egresado
+599452433	Omar	Llamas Alfaro	No	omar70llam@gmail.com	83743843	Boulevard Soria 339 845, San Leonel de la Monta¤a, SLP 793341016	Egresado
+395006002	Emilio	Villagomez Colon	No	emil60vill@gmail.com	83107213	Callejon Michoac n de Ocampo 685 Edif. 621 , Depto. 850, Vieja ex Rep£blica Yugoslava de Macedonia, COAH 999650477	Inactivo
+524377794	Benjam¡n	Centeno Brito	No	benj89cent@gmail.com	83048938	Privada Norte Candelaria 158 199, San Judith de la Monta¤a, NL 618398262	Egresado
+143917350	Camila	Valle Feliciano	No	cami95vall@gmail.com	83872487	Calzada Norte Lovato 167 Edif. 243 , Depto. 426, San Antonia los bajos, YUC 886805891	Activo
+780592750	Arturo	Carrillo Collado	No	artu93carr@gmail.com	83890846	Pasaje Jalisco 757 Edif. 177 , Depto. 514, Nueva Antigua y Barbuda, QRO 23828	Inactivo
+119990620	Samuel	Mora Chaves	No	samu232007@gmail.com	83376071	San José, Purral, Las Marianas, Casa 4a	Activo
+123062766	María Elena	Bustos Galindo	No	mari71bust@gmail.com	83275870	Cerrada Distrito Federal 318 Edif. 393 , Depto. 352, Vieja Chipre, DF 210205395	Activo
+125109101	Serafín	Ceja Zambrano	Sí	sera55ceja@gmail.com	83186171	Callejon Tonga 270 Edif. 653 , Depto. 794, San Eugenia los altos, MICH 735977468	Inactivo
+145271436	Alejandro	Barrientos Gollum	No	alej41barr@gmail.com	83494352	Eje vial Calvillo 172 Edif. 400 , Depto. 504, San Jos‚ Luis los bajos, DGO 86922	Egresado
+149082671	Gabriela	Ulloa Ceja	Sí	gabr27ullo@gmail.com	83096594	Boulevard Sur Grijalva 248 Edif. 086 , Depto. 131, San Caridad los altos, DGO 484677378	Inactivo
+196429264	Abel	Maestas Llamas	No	abel58maes@gmail.com	83903979	Pasaje Tlaxcala 387 Interior 214, San Aurelio de la Monta¤a, OAX 32003	Inactivo
+224378353	oliver	Peralta Cuellar	Sí	oliv76pera@gmail.com	83417564	Andador Yucat n 818 Interior 141, Vieja Micronesia, DGO 137506068	Inactivo
+224711331	Jesés	Guajardo Vasquez	Sí	jese58guaj@gmail.com	83789268	Perif‚rico Muro 888 880, San Mariano de la Monta¤a, SIN 405153195	Activo
+249171187	Beatriz	Gollum Terrazas	No	beat30goll@gmail.com	83083309	Corredor Norte Villagomez 261 Edif. 796 , Depto. 405, Vieja Mauritania, MICH 158506431	Inactivo
+250958494	Leonel	Grijalva Urias	No	leon64grij@gmail.com	83606207	Pasaje Norte Manzanares 587 Interior 717, San Emilia los bajos, PUE 093204899	Egresado
+254355824	Aurora	Ortega Alcaraz	Sí	auro81orte@gmail.com	83994229	Corredor Norte Viera 513 Interior 709, San Santiago de la Monta¤a, COAH 461200471	Egresado
+258967037	Rosario	Sarabia Olivo	Sí	rosa36sara@gmail.com	83949457	Prolongacion Sur Medina 782 Edif. 071 , Depto. 518, Nueva Finlandia, TLAX 889255466	Activo
+264829415	Nadia	Baca Castellanos	No	nadi84baca@gmail.com	83266761	Callejon Iraq 358 Edif. 414 , Depto. 384, Vieja Santo Tom‚ y Pr¡ncipe, COL 99229	Egresado
+266706142	Aurora	Lucero Mena	No	auro50luce@gmail.com	83833907	Calle Qatar 884 Interior 247, San Ivonne de la Monta¤a, VER 23685	Activo
+268792698	Leonardo	Montano Concepcion	No	leon56mont@gmail.com	83891454	Avenida Quintana Roo 473 Interior 384, San Citlali de la Monta¤a, MICH 08330	Activo
+282945772	Silvano	Correa Granado	No	silv55corr@gmail.com	83263571	Ampliacion Sur Mercado 342 Interior 160, San Estela de la Monta¤a, VER 433036541	Inactivo
+290037611	Juan	Ocasio Urías	No	juan40ocas@gmail.com	83187393	Callejon Borrego 659 Interior 180, Nueva Tonga, YUC 014890250	Egresado
+314161851	Ariadna	Medina Zúñiga	Sí	aria61medi@gmail.com	83881040	Circuito Senegal 985 Edif. 698 , Depto. 478, San Berta los altos, CHIH 67365	Egresado
+314394553	María Elena	Ozuna Pelayo	No	mari4ozun@gmail.com	83017300	Continuacion Norte Noriega 711 116, Vieja Canad , CAMP 165604945	Inactivo
+314478560	Clara	Jiménez Madera	No	clar91jim‚@gmail.com	83048226	Avenida C“te dïIvoire 464 Interior 715, San Fernando los altos, ZAC 71240	Egresado
+335366039	Rubén	Pérez Solorzano	Sí	ruben92gast@gmail.com	83620690	Circunvalacion Norte Maga¤a 909 Edif. 133 , Depto. 412, Nueva Rep£blica Centroafricana, COAH 06797	Egresado
+344083783	Martha	Maldonado Crespo	No	mart37mald@gmail.com	83838917	Viaducto Lucero 933 Interior 272, San Samuel los bajos, TAB 833918785	Activo
+349764482	Amador	Lopez Olivo	No	amad41lope@gmail.com	83121013	Continuacion Rep£blica Dominicana 532 Edif. 787 , Depto. 747, Nueva Liberia, VER 39500	Inactivo
+359401401	María Teresa	Ojeda Jim¡nez	No	mari94ojed@gmail.com	83571342	Cerrada Aparicio 641 Interior 395, Vieja Libia, VER 42388	Egresado
+360035015	Leonardo	Mercado Olivares	No	leon41merc@gmail.com	83146820	Eje vial Distrito Federal 593 Interior 752, San Indira los bajos, ZAC 56465	Egresado
+361337217	Sandra	Su rez Pi¤a	No	sand53su r@gmail.com	83871148	Circunvalacion Camboya 369 711, San Rub‚n los altos, BC 24609	Inactivo
+361466067	Cristina	Rendon Acosta	Sí	cris17rend@gmail.com	83510328	Viaducto Lugo 893 Edif. 252 , Depto. 880, San Minerva de la Monta¤a, CHIH 430391171	Activo
+371889155	Josselin	Prado Barrios	Sí	jos62prad@gmail.com	83717395	Circunvalacion Sarabia 656 Interior 482, Vieja Suiza, SIN 99468	Activo
+372358687	Mart¡n	Salas Ramos	Sí	mart49sala@gmail.com	83306199	Cerrada Sonora 349 Edif. 578 , Depto. 856, San Jes£s los altos, VER 443135182	Inactivo
+377915039	Cristobal	Men‚ndez Valencia	Sí	cris35men‚@gmail.com	83708805	Diagonal Seychelles 266 093, San Rosalia los bajos, SIN 33419	Inactivo
+411411713	Rosario	Mateo Quintero	No	rosa28mate@gmail.com	83760722	Peatonal Micronesia 348 Interior 734, San Araceli los altos, NL 45581	Activo
+424666848	Bianca	Guzm n Mota	No	bian32guzm@gmail.com	83450670	Continuacion Norte Caraballo 143 888, Vieja Kiribati, SON 982507146	Inactivo
+428466309	Elisa	G lvez Roybal	Sí	elis85g lv@gmail.com	83787772	Calzada Lucio 524 082, San Amalia de la Monta¤a, NL 71094	Egresado
+431772043	Tomás	Bahena Soria	Sí	tom48bahe@gmail.com	83222473	Ampliacion Paz 312 038, San Jos‚ Luis de la Monta¤a, YUC 008860084	Activo
+436713515	Dalia	Orozco Luna	Sí	dali62oroz@gmail.com	83074786	Peatonal Baja California 516 Interior 940, San Gabino los altos, MEX 97289	Egresado
+437498680	Daniela	Palomo Ruelas	No	dani50palo@gmail.com	83174744	Andador Sur Ojeda 647 468, San Cristal de la Monta¤a, NL 09805	Egresado
+460632383	Mario	Oliv rez Olvera	Sí	mari13oliv@gmail.com	83514166	Calle Sandoval 517 Edif. 187 , Depto. 026, Nueva Myanmar, MOR 961586578	Egresado
+467857629	Zacar¡as	Calvillo Ballesteros	No	zaca10calv@gmail.com	83037906	Cerrada Espinosa 872 624, San Felix de la Monta¤a, TLAX 08013	Egresado
+470186832	José Luis	Gracia Olvera	No	jose14grac@gmail.com	83355741	Ampliacion Ir n 522 047, Vieja M‚xico, AGS 04328	Activo
+479505733	Alejandro	Osorio Saldivar	No	alej99osor@gmail.com	83512114	Ampliacion Lugo 915 Edif. 478 , Depto. 872, San Georgina de la Monta¤a, CHIH 274205493	Activo
+481346142	Sofía	Casanova Cazares	Sí	sofi41casa@gmail.com	83630520	Continuacion San Luis Potos¡ 398 680, Nueva Chile, QRO 872982595	Inactivo
+481943518	Ana Luisa	Arteaga Viera	Sí	ana 61arte@gmail.com	83532835	Perif‚rico Blanco 191 361, Nueva San Vicente y las Granadinas, COL 998543534	Inactivo
+490808669	Frida	Viera Porras	No	frid64vier@gmail.com	83243857	Calle Pakist n 101 Interior 226, Vieja Lesotho, VER 801845146	Egresado
+499053230	Itzel	Galarza Renter¡a	No	itze45gala@gmail.com	83098095	Circuito Norte Hern dez 708 053, Nueva Argelia, MICH 09232	Egresado
+533268177	Germ n	Aguayo Crespo	No	germ98agua@gmail.com	83570730	Calle Jalisco 116 Interior 155, San Alvaro los altos, VER 61849	Egresado
+539652115	Esperanza	Moya Uribe	No	espe10moya@gmail.com	83248141	Prolongacion Suecia 194 Interior 311, San Cristian los bajos, DGO 551104754	Inactivo
+540683945	In‚s	Cant£ Cruz	SÍ	ins25cant@gmail.com	83017136	Circunvalacion Norte Urbina 715 451, San Noelia de la Monta¤a, VER 038597703	Activo
+552313865	Araceli	Valle Carrasco	Sí	arac90vall@gmail.com	83198864	Callejon Irlanda 713 Edif. 971 , Depto. 870, San C‚sar los altos, TAB 908740640	Inactivo
+563883288	Esteban	V‚liz Beltr n	No	este76vli@gmail.com	83017495	Avenida Campeche 704 622, San Jos‚ Luis los bajos, TLAX 618251286	Egresado
+575449843	Federico	Rivera Vargas	Sí	fede15rive@gmail.com	83359874	Peatonal Mel‚ndez 735 454, San Pilar de la Monta¤a, HGO 36783	Egresado
+577276873	Marcela	Blanco Zamora	SÍ	marc59blan@gmail.com	83410135	Retorno Morelos 139 904, Nueva Myanmar, TLAX 296717565	Inactivo
+583241864	Adriana	Delgado Jaimes	Sí	adri15delg@gmail.com	83024495	Perif‚rico Sur Barela 758 Interior 917, Nueva Uzbekist n, OAX 007661771	Egresado
+615383834	Guillermina	Salda¤a Zambrano	No	guil46sald@gmail.com	83514948	Boulevard Prado 456 506, Nueva Kazajst n, NL 68784	Egresado
+617376300	Florencia	Figueroa Men‚ndez	Sí	flor20figu@gmail.com	83804977	Avenida Hidalgo 469 901, Nueva Nauru, JAL 403317393	Activo
+627609154	Mart¡n	Beltr n Res‚ndez	No	mart16belt@gmail.com	83835822	Peatonal Norte Guerrero 016 328, San Amador los altos, MICH 72788	Inactivo
+630477645	Frida	Hurtado Ram¡rez	No	frid18hurt@gmail.com	83248180	Calzada Sur Cerv ntez 727 155, Vieja Hait¡, GTO 58313	Inactivo
+643737352	Juan Carlos	Valverde Apodaca	Sí	juan45valv@gmail.com	83467621	Corredor Tlaxcala 928 565, San Felix de la Monta¤a, BC 78681	Egresado
+654707051	Cristian	Ben¡tez D¡az	Sí	cris26ben¡@gmail.com	83897291	Prolongacion Norte Mata 717 744, Vieja Pa¡ses Bajos, COAH 770054119	Inactivo
+669868899	Clemente	Olivera Espino	Sí	clem60oliv@gmail.com	83122901	Eje vial Quer‚taro 404 Edif. 499 , Depto. 727, San Jaime los bajos, SIN 533963605	Activo
+711988178	Jos	V‚lez Espinosa	No	jos83vle@gmail.com	83857625	Circunvalacion Benin 164 752, San Joaqu¡n de la Monta¤a, NAY 92832	Activo
+745772106	Germán	Montoya Saucedo	Sí	germ41mont@gmail.com	83630790	Boulevard Ibarra 940 196, San Humberto los bajos, CHIH 934060883	Inactivo
+762843450	José Carlos	Quesada Pabon	No	jose69ques@gmail.com	83959631	Callejon Zacatecas 758 Edif. 416 , Depto. 169, Vieja Iraq, CHIS 54479	Egresado
+773725661	Rolando	Garay Aguilar	Sí	rola27gara@gmail.com	83710006	Avenida Argentina 183 Interior 473, Vieja Filipinas, YUC 311656670	Egresado
+780665740	Mariano	Roque Quintana	Sí	mari28roqu@gmail.com	83203721	Circuito Romo 167 190, Nueva Rep£blica de Moldova, OAX 31869	Inactivo
+797152245	Estefanía	Saavedra Gaona	Sí	este77saav@gmail.com	83667882	Ampliacion Norte Miramontes 627 Edif. 298 , Depto. 069, Nueva Somalia, TAMPS 72046	Activo
+\.
+
+
+--
+-- TOC entry 5136 (class 0 OID 26439)
+-- Dependencies: 238
+-- Data for Name: estudiante_info; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.estudiante_info (id, id_estudiante, id_departamento, id_carrera, id_materia, id_grupo, cuatrimestre, id_sede, curso_lectivo, estado) FROM stdin;
+97	742022876	1	1	2	6	2	5	2025	Activo
+98	742022876	1	1	3	6	2	5	2025	Activo
+99	742022876	1	1	4	6	2	5	2025	Activo
+100	711988178	1	1	2	6	2	5	2025	Activo
+101	711988178	1	1	3	6	2	5	2025	Activo
+102	711988178	1	1	4	6	2	5	2025	Activo
+103	361466067	4	2	7	8	2	5	2025	Activo
+104	361466067	4	2	3	8	2	5	2025	Activo
+105	361466067	4	2	4	8	2	5	2025	Activo
+106	641113544	4	2	7	8	2	5	2025	Activo
+107	641113544	4	2	3	8	2	5	2025	Activo
+108	641113544	4	2	4	8	2	5	2025	Activo
+109	371889155	5	3	1	1	7	1	2025	Activo
+110	371889155	5	3	2	1	7	1	2025	Activo
+111	371889155	5	3	3	1	7	1	2025	Activo
+112	411411713	5	3	1	1	7	1	2025	Activo
+113	411411713	5	3	2	1	7	1	2025	Activo
+114	411411713	5	3	3	1	7	1	2025	Activo
+115	797152245	1	1	3	2	8	3	2025	Activo
+116	797152245	1	1	2	2	8	3	2025	Activo
+117	797152245	1	1	4	2	8	3	2025	Activo
+118	288399049	1	1	3	2	8	3	2025	Activo
+119	288399049	1	1	2	2	8	3	2025	Activo
+120	288399049	1	1	4	2	8	3	2025	Activo
+121	698648982	5	3	1	4	1	1	2025	Activo
+122	698648982	5	3	2	4	1	1	2025	Activo
+123	698648982	5	3	3	4	1	1	2025	Activo
+124	258967037	5	3	1	4	1	1	2025	Activo
+125	258967037	5	3	2	4	1	1	2025	Activo
+126	258967037	5	3	3	4	1	1	2025	Activo
+127	280886595	3	4	6	9	2	2	2025	Activo
+128	280886595	3	4	2	9	2	2	2025	Activo
+129	280886595	3	4	3	9	2	2	2025	Activo
+130	470186832	1	1	3	7	3	3	2025	Activo
+131	470186832	1	1	4	7	3	3	2025	Activo
+132	470186832	1	1	6	7	3	3	2025	Activo
+133	361337217	3	4	6	3	3	3	2025	Activo
+134	361337217	3	4	7	3	3	3	2025	Activo
+135	361337217	3	4	4	3	3	3	2025	Activo
+136	224711331	5	3	1	4	1	1	2025	Activo
+137	224711331	5	3	2	4	1	1	2025	Activo
+138	224711331	5	3	3	4	1	1	2025	Activo
+139	370899226	1	1	2	6	2	5	2025	Activo
+140	370899226	1	1	3	6	2	5	2025	Activo
+141	370899226	1	1	4	6	2	5	2025	Activo
+142	143917350	3	4	1	5	6	2	2025	Activo
+143	143917350	3	4	4	5	6	2	2025	Activo
+144	143917350	3	4	6	5	6	2	2025	Activo
+145	119990620	1	1	2	6	2	5	2025	Activo
+146	119990620	1	1	3	6	2	5	2025	Activo
+147	119990620	1	1	4	6	2	5	2025	Activo
+\.
+
+
+--
+-- TOC entry 5138 (class 0 OID 26446)
+-- Dependencies: 240
+-- Data for Name: grupos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.grupos (id_grupo, grupo, id_carrera, cuatrimestre, id_sede, estado) FROM stdin;
+1	AE-7-CA	3	7	1	Activo
+2	IC-8-SC	1	8	3	Activo
+3	MI-3-SC	4	3	3	Activo
+4	AE-1-CA	3	1	1	Activo
+5	MI-6-SJ	4	6	2	Activo
+6	IC-2-AL	1	2	5	Activo
+7	IC-3-SC	1	3	3	Activo
+8	IE-2-AL	2	2	5	Activo
+9	MI-2-SJ	4	2	2	Activo
+10	IE-1-LI	2	1	4	Activo
+\.
+
+
+--
+-- TOC entry 5140 (class 0 OID 26453)
+-- Dependencies: 242
+-- Data for Name: horarios; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.horarios (id_horario, id_grupo, id_materia, id_docente, dia, hora_inicio, hora_fin, id_sede, id_aula, estado) FROM stdin;
+1	1	1	638272196	Lunes	08:00:00	10:00:00	1	3	Activo
+2	1	2	724126451	Mi‚rcoles	13:00:00	15:00:00	1	6	Activo
+3	1	3	557696281	Viernes	10:00:00	12:00:00	1	8	Activo
+4	2	3	632382031	Lunes	10:00:00	12:00:00	3	9	Activo
+5	2	2	461322329	Mi‚rcoles	13:00:00	15:00:00	3	12	Activo
+6	2	4	253676496	Viernes	07:00:00	09:00:00	3	9	Activo
+7	3	6	362578186	Lunes	09:00:00	11:00:00	5	13	Activo
+8	3	7	488944853	Mi‚rcoles	08:00:00	10:00:00	5	10	Activo
+9	3	4	178802366	Viernes	11:00:00	13:00:00	5	16	Activo
+10	4	1	491049223	Lunes	08:00:00	10:00:00	1	3	Activo
+11	4	2	461322329	Mi‚rcoles	09:00:00	11:00:00	1	5	Activo
+12	4	3	212284787	Viernes	13:00:00	15:00:00	1	8	Activo
+13	5	1	638272196	Lunes	08:00:00	10:00:00	1	3	Activo
+14	5	4	782158352	Mi‚rcoles	11:00:00	13:00:00	2	20	Activo
+15	5	6	488944853	Viernes	09:00:00	11:00:00	5	16	Activo
+16	6	2	724126451	Lunes	07:00:00	09:00:00	3	9	Activo
+17	6	3	461322329	Mi‚rcoles	10:00:00	12:00:00	3	12	Activo
+18	6	4	253676496	Viernes	08:00:00	10:00:00	3	9	Activo
+19	7	3	632382031	Lunes	08:00:00	10:00:00	2	7	Activo
+20	7	4	253676496	Mi‚rcoles	11:00:00	13:00:00	2	20	Activo
+21	7	6	782158352	Viernes	07:00:00	09:00:00	2	20	Activo
+22	8	7	461322329	Lunes	10:00:00	12:00:00	5	13	Activo
+23	8	3	362578186	Mi‚rcoles	10:00:00	12:00:00	5	16	Activo
+24	8	4	253676496	Viernes	09:00:00	11:00:00	5	16	Activo
+25	9	6	782158352	Lunes	07:00:00	09:00:00	2	20	Activo
+26	9	2	461322329	Mi‚rcoles	13:00:00	15:00:00	2	20	Activo
+27	9	3	632382031	Viernes	08:00:00	10:00:00	2	7	Activo
+\.
+
+
+--
+-- TOC entry 5142 (class 0 OID 26460)
+-- Dependencies: 244
+-- Data for Name: materias; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.materias (id_materia, nombre_materia, estado) FROM stdin;
+5	Gestion Empresarial	Activo
+6	Mantenimiento de Maquinaria	Activo
+1	Cálculo Diferencial	Activo
+2	Álgebra Lineal	Activo
+3	Fundamentos de Programación	Activo
+4	Circuitos Eléctricos	Activo
+7	Biología Agrícola	Activo
+\.
+
+
+--
+-- TOC entry 5143 (class 0 OID 26466)
+-- Dependencies: 245
+-- Data for Name: materias_carrera; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.materias_carrera (id_carrera, id_materia, estado) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5145 (class 0 OID 26473)
+-- Dependencies: 247
+-- Data for Name: registro_pagos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.registro_pagos (id_pago, fecha_pago, num_cedula, horas_extra, bonos, monto, estado) FROM stdin;
+1	2025-03-24	770438584	2	?54298	?664298	Activo
+2	2025-03-24	770438584	2	?54298	?664298	Activo
+3	2024-02-25	770438584	3	?4230	?619230	Activo
+4	2022-08-19	770438584	4	?26108	?646108	Activo
+5	2023-01-16	770438584	1	?1908	?606908	Activo
+6	2024-07-05	444775705	5	?53260	?678260	Activo
+7	2023-06-20	444775705	1	?40306	?645306	Activo
+8	2025-03-22	444775705	0	?21829	?621829	Activo
+9	2024-07-03	444775705	5	?1374	?626374	Activo
+10	2024-07-03	778275028	3	?8903	?623903	Activo
+11	2022-11-03	778275028	2	?33620	?643620	Activo
+12	2023-12-30	778275028	0	?36240	?636240	Activo
+13	2023-01-02	778275028	1	?27175	?632175	Activo
+14	2022-01-27	246546578	4	?51332	?671332	Activo
+15	2022-04-17	246546578	5	?4603	?629603	Activo
+16	2024-01-10	246546578	0	?1526	?601526	Activo
+17	2022-06-19	246546578	0	?55853	?655853	Activo
+18	2022-10-21	295115416	3	?18074	?633074	Activo
+19	2023-08-20	295115416	5	?57335	?682335	Activo
+20	2022-07-15	295115416	2	?11582	?621582	Activo
+21	2024-02-16	295115416	2	?46050	?656050	Activo
+22	2024-12-14	623977532	5	?56656	?681656	Activo
+23	2023-06-10	623977532	3	?24073	?639073	Activo
+24	2023-05-23	623977532	2	?7546	?617546	Activo
+25	2023-09-27	623977532	5	?58719	?683719	Activo
+26	2023-07-21	667414634	0	?25619	?625619	Activo
+27	2023-03-21	667414634	5	?6454	?631454	Activo
+28	2023-04-21	667414634	3	?3649	?618649	Activo
+29	2023-08-21	667414634	3	?19607	?634607	Activo
+30	2022-11-22	485731209	2	?46709	?656709	Activo
+31	2023-05-04	485731209	3	?51208	?666208	Activo
+32	2023-11-08	485731209	2	?46672	?656672	Activo
+33	2024-12-08	485731209	4	?34438	?654438	Activo
+34	2022-05-03	174672463	1	?5771	?610771	Activo
+35	2022-03-09	174672463	4	?7617	?627617	Activo
+36	2023-11-08	174672463	0	?6208	?606208	Activo
+37	2024-12-16	174672463	1	?2944	?607944	Activo
+38	2023-07-17	285267243	2	?15973	?625973	Activo
+39	2022-01-05	285267243	1	?19872	?624872	Activo
+40	2024-03-14	285267243	4	?25294	?645294	Activo
+41	2022-06-08	285267243	3	?41394	?656394	Activo
+42	2023-04-04	638272196	2	?43204	?653204	Activo
+43	2024-07-29	638272196	2	?3237	?613237	Activo
+44	2022-12-11	638272196	0	?31500	?631500	Activo
+45	2022-04-08	638272196	0	?33552	?633552	Activo
+46	2024-03-28	724126451	0	?13746	?613746	Activo
+47	2024-05-25	724126451	1	?34650	?639650	Activo
+48	2024-09-01	724126451	2	?9611	?619611	Activo
+49	2023-09-27	724126451	3	?31198	?646198	Activo
+50	2022-03-23	491518074	4	?32296	?652296	Activo
+51	2022-11-12	491518074	5	?2837	?627837	Activo
+52	2023-08-27	491518074	4	?35490	?655490	Activo
+53	2023-06-30	491518074	5	?7507	?632507	Activo
+54	2023-06-11	428168066	5	?37792	?662792	Activo
+55	2024-03-04	428168066	3	?31566	?646566	Activo
+56	2024-05-17	428168066	2	?39685	?649685	Activo
+57	2022-04-09	428168066	1	?50762	?655762	Activo
+58	2024-12-04	557696281	4	?46662	?666662	Activo
+59	2023-01-30	557696281	5	?11741	?636741	Activo
+60	2022-09-30	557696281	1	?32332	?637332	Activo
+61	2023-05-13	557696281	3	?8034	?623034	Activo
+62	2022-11-13	266626369	2	?16831	?626831	Activo
+63	2022-03-05	266626369	3	?10302	?625302	Activo
+64	2022-03-29	266626369	5	?59343	?684343	Activo
+65	2023-04-06	266626369	5	?19460	?644460	Activo
+66	2022-05-07	438208885	3	?41297	?656297	Activo
+67	2022-03-10	438208885	0	?3059	?603059	Activo
+68	2023-01-15	438208885	3	?54792	?669792	Activo
+69	2023-03-19	438208885	1	?57809	?662809	Activo
+70	2024-03-02	461322329	1	?24786	?629786	Activo
+71	2023-02-28	461322329	3	?29488	?644488	Activo
+72	2024-12-06	461322329	2	?6508	?616508	Activo
+73	2022-11-26	461322329	4	?55111	?675111	Activo
+74	2022-06-07	632382031	5	?18388	?643388	Activo
+75	2024-07-30	632382031	0	?35088	?635088	Activo
+76	2025-02-17	632382031	5	?36853	?661853	Activo
+77	2023-09-22	632382031	4	?58184	?678184	Activo
+78	2023-07-17	362578186	3	?10888	?625888	Activo
+79	2023-02-13	362578186	4	?36387	?656387	Activo
+80	2025-04-05	362578186	4	?22552	?642552	Activo
+81	2025-03-16	362578186	1	?16181	?621181	Activo
+82	2022-03-22	366995378	4	?44164	?664164	Activo
+83	2023-04-08	366995378	2	?42405	?652405	Activo
+84	2023-06-09	366995378	4	?6680	?626680	Activo
+85	2024-03-18	366995378	4	?23969	?643969	Activo
+86	2022-05-26	178802366	3	?32526	?647526	Activo
+87	2024-03-21	178802366	3	?2856	?617856	Activo
+88	2024-08-20	178802366	5	?11128	?636128	Activo
+89	2022-04-13	178802366	0	?59584	?659584	Activo
+90	2022-08-28	253676496	2	?27572	?637572	Activo
+91	2022-05-30	253676496	5	?33705	?658705	Activo
+92	2023-10-27	253676496	4	?59568	?679568	Activo
+93	2022-05-19	253676496	1	?39551	?644551	Activo
+94	2022-12-11	782158352	5	?20654	?645654	Activo
+95	2022-06-03	782158352	4	?43508	?663508	Activo
+96	2025-01-05	782158352	5	?32602	?657602	Activo
+97	2022-03-11	782158352	4	?37451	?657451	Activo
+98	2022-04-12	491049223	0	?18757	?618757	Activo
+99	2024-09-20	491049223	3	?18264	?633264	Activo
+100	2023-03-22	491049223	3	?44447	?659447	Activo
+101	2022-12-30	491049223	2	?26889	?636889	Activo
+102	2023-11-28	488944853	5	?8533	?633533	Activo
+103	2024-03-12	488944853	4	?48359	?668359	Activo
+104	2024-06-09	488944853	3	?22756	?637756	Activo
+105	2023-09-27	488944853	5	?57913	?682913	Activo
+106	2022-01-08	429636677	1	?56836	?661836	Activo
+107	2024-09-13	429636677	4	?14744	?634744	Activo
+108	2025-01-10	429636677	5	?36360	?661360	Activo
+109	2024-07-16	429636677	4	?27076	?647076	Activo
+110	2024-07-15	555376930	4	?1648	?621648	Activo
+111	2024-09-12	555376930	3	?51536	?666536	Activo
+112	2024-05-20	555376930	0	?16562	?616562	Activo
+113	2023-01-15	555376930	3	?40706	?655706	Activo
+114	2023-07-07	212284787	4	?25185	?645185	Activo
+115	2022-09-15	212284787	2	?7792	?617792	Activo
+116	2024-10-09	212284787	2	?7225	?617225	Activo
+117	2022-05-28	212284787	1	?50174	?655174	Activo
+118	2022-01-19	244494033	3	?40029	?655029	Activo
+119	2023-07-27	244494033	1	?59997	?664997	Activo
+120	2023-09-19	244494033	0	?45700	?645700	Activo
+121	2022-04-02	244494033	0	?46349	?646349	Activo
+\.
+
+
+--
+-- TOC entry 5147 (class 0 OID 26480)
+-- Dependencies: 249
+-- Data for Name: salarios; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.salarios (num_cedula, puesto, salario, estado) FROM stdin;
+638272196	Docente	?557603	Activo
+724126451	Docente	?586689	Activo
+491518074	Docente	?464701	Inactivo
+428168066	Docente	?553407	Inactivo
+557696281	Docente	?552183	Activo
+266626369	Docente	?502532	Activo
+438208885	Docente	?676623	Activo
+461322329	Docente	?729805	Inactivo
+632382031	Docente	?847322	Activo
+362578186	Docente	?869379	Activo
+366995378	Docente	?729115	Activo
+178802366	Docente	?707548	Activo
+253676496	Docente	?665159	Inactivo
+782158352	Docente	?807166	Activo
+491049223	Docente	?735000	Inactivo
+488944853	Docente	?689000	Inactivo
+429636677	Docente	?720000	Activo
+555376930	Docente	?699000	Inactivo
+212284787	Docente	?748000	Inactivo
+244494033	Docente	?730000	Inactivo
+770438584	Secretario	?795586	Activo
+444775705	Secretario	?463986	Activo
+778275028	Recepcionista	?663174	Activo
+246546578	Secretario	?631228	Activo
+295115416	Recepcionista	?707548	Activo
+623977532	Secretario	?665159	Inactivo
+667414634	Encargado de laboratorio	?610341	Inactivo
+485731209	Encargado de laboratorio	?600604	Inactivo
+174672463	Encargado de laboratorio	?614533	Activo
+285267243	Secretario	?635181	Activo
+\.
+
+
+--
+-- TOC entry 5148 (class 0 OID 26486)
+-- Dependencies: 250
+-- Data for Name: sedes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.sedes (id_sede, nombre_sede, provincia, horario, estado) FROM stdin;
+1	Campus Tecnológico Central Cartago	Cartago	Lunes - Viernes, 7a.m. - 6p.m.	Activo
+2	Campus Tecnológico Local San Jos‚	San Jos‚	Lunes - Viernes, 7a.m. - 6p.m.	Activo
+3	Campus Tecnológico Local San Carlos	Alajuela	Lunes - Viernes, 7a.m. - 6p.m.	Activo
+4	Centro Académico de Limón	Lim¢n	Lunes - Viernes, 7a.m. - 6p.m.	Activo
+5	Centro Académico de Alajuela	Alajuela	Lunes - Viernes, 7a.m. - 6p.m.	Activo
+\.
+
+
+--
+-- TOC entry 5150 (class 0 OID 26493)
+-- Dependencies: 252
+-- Data for Name: sedes_info; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.sedes_info (id, id_sede, id_departamento, id_carrera, estado) FROM stdin;
+1	1	4	2	Activo
+2	3	4	1	Activo
+3	4	4	3	Activo
+4	1	4	4	Activo
+5	2	2	4	Activo
+6	2	4	1	Activo
+7	4	4	4	Activo
+8	5	1	3	Activo
+9	5	3	2	Activo
+10	1	2	4	Activo
+\.
+
+
+--
+-- TOC entry 5152 (class 0 OID 26500)
+-- Dependencies: 254
+-- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.usuarios (id, usuario, contrasena, rol, estado, nombre) FROM stdin;
+137	mari71bust@gmail.com	TEC-1234	estudiante	Activo	María Elena
+139	jese58guaj@gmail.com	TEC-1234	estudiante	Activo	Jesés
+140	mari4ozun@gmail.com	TEC-1234	estudiante	Activo	María Elena
+141	ruben92gast@gmail.com	TEC-1234	estudiante	Activo	Rubén
+142	mari94ojed@gmail.com	TEC-1234	estudiante	Activo	María Teresa
+143	jos62prad@gmail.com	TEC-1234	estudiante	Activo	Josselin
+144	tom48bahe@gmail.com	TEC-1234	estudiante	Activo	Tomás
+145	jose14grac@gmail.com	TEC-1234	estudiante	Activo	José Luis
+146	sofi41casa@gmail.com	TEC-1234	estudiante	Activo	Sofía
+148	este76vli@gmail.com	TEC-1234	estudiante	Activo	Esteban
+149	jos83vle@gmail.com	TEC-1234	estudiante	Activo	Jos
+151	jose69ques@gmail.com	TEC-1234	estudiante	Activo	José Carlos
+147	ins25cant@gmail.com	TEC-1234	estudiante	Activo	Inés
+5	timo55carr@gmail.com	TEC-1234	estudiante	Activo	Timoteo
+6	germ98agua@gmail.com	TEC-1234	estudiante	Activo	Germán
+7	jos83v‚le@gmail.com	TEC-1234	estudiante	Activo	Josselin
+20	germ41mont@gmail.com	TEC-1234	estudiante	Activo	Germán
+26	este77saav@gmail.com	TEC-1234	estudiante	Activo	Estefanía
+51	bern53v‚le@gmail.com	TEC-1234	estudiante	Activo	Bernardo
+136	samu232007@gmail.com	TEC-1234	estudiante	Activo	Samuel
+135	admin@gmail.com	admin123	admin	Activo	Admin
+8	mar¡94ojed@gmail.com	TEC-1234	estudiante	Activo	María Teresa
+9	frid64vier@gmail.com	TEC-1234	estudiante	Activo	Frida
+10	cris17rend@gmail.com	TEC-1234	estudiante	Activo	Cristina
+11	osca68cast@gmail.com	TEC-1234	estudiante	Activo	Óscar
+12	rola27gara@gmail.com	TEC-1234	estudiante	Activo	Rolando
+13	zaca10calv@gmail.com	TEC-1234	estudiante	Activo	Zacarías
+14	dani50palo@gmail.com	TEC-1234	estudiante	Activo	Daniela
+15	ana 61arte@gmail.com	TEC-1234	estudiante	Activo	Ana Luisa
+16	leon28ceja@gmail.com	TEC-1234	estudiante	Activo	Leonardo
+17	abri49urru@gmail.com	TEC-1234	estudiante	Activo	Abril
+18	luis31vale@gmail.com	TEC-1234	estudiante	Activo	Luis
+19	silv55corr@gmail.com	TEC-1234	estudiante	Activo	Silvano
+21	jos‚62prad@gmail.com	TEC-1234	estudiante	Activo	Josselin
+22	abel58maes@gmail.com	TEC-1234	estudiante	Activo	Abel
+23	mart16belt@gmail.com	TEC-1234	estudiante	Activo	Martín
+24	rosa28mate@gmail.com	TEC-1234	estudiante	Activo	Rosario
+25	citl25coro@gmail.com	TEC-1234	estudiante	Activo	Citlali
+27	itze45gala@gmail.com	TEC-1234	estudiante	Activo	Itzel
+28	mari22carr@gmail.com	TEC-1234	estudiante	Activo	Mario
+29	carl51vall@gmail.com	TEC-1234	estudiante	Activo	Carla
+30	fede15rive@gmail.com	TEC-1234	estudiante	Activo	Federico
+31	mart49sala@gmail.com	TEC-1234	estudiante	Activo	Martín
+32	elis85g lv@gmail.com	TEC-1234	estudiante	Activo	Elisa
+33	mari28roqu@gmail.com	TEC-1234	estudiante	Activo	Mariano
+34	rub‚92gast@gmail.com	TEC-1234	estudiante	Activo	Rubén
+35	guil89apod@gmail.com	TEC-1234	estudiante	Activo	Guillermo
+36	marc59blan@gmail.com	TEC-1234	estudiante	Activo	Marcela
+37	in‚s25cant@gmail.com	TEC-1234	estudiante	Activo	Inés
+38	gabr27ullo@gmail.com	TEC-1234	estudiante	Activo	Gabriela
+39	clem60oliv@gmail.com	TEC-1234	estudiante	Activo	Clemente
+40	mari13oliv@gmail.com	TEC-1234	estudiante	Activo	Mario
+41	alej41barr@gmail.com	TEC-1234	estudiante	Activo	Alejandro
+42	deli65berr@gmail.com	TEC-1234	estudiante	Activo	Delia
+43	rein39mu¤o@gmail.com	TEC-1234	estudiante	Activo	Reina
+44	auro50luce@gmail.com	TEC-1234	estudiante	Activo	Aurora
+45	auro81orte@gmail.com	TEC-1234	estudiante	Activo	Aurora
+46	beat30goll@gmail.com	TEC-1234	estudiante	Activo	Beatriz
+47	mar¡71bust@gmail.com	TEC-1234	estudiante	Activo	María Elena
+48	adri15delg@gmail.com	TEC-1234	estudiante	Activo	Adriana
+49	aria61medi@gmail.com	TEC-1234	estudiante	Activo	Ariadna
+50	mar¡44ozun@gmail.com	TEC-1234	estudiante	Activo	María Estela
+52	clau54angu@gmail.com	TEC-1234	estudiante	Activo	Claudio
+53	marg86pedr@gmail.com	TEC-1234	estudiante	Activo	María Belén
+54	itze72casa@gmail.com	TEC-1234	estudiante	Activo	Itzel
+55	jos64buen@gmail.com	TEC-1234	estudiante	Activo	Josselin
+56	cris26ben¡@gmail.com	TEC-1234	estudiante	Activo	Cristopher
+57	rosa36sara@gmail.com	TEC-1234	estudiante	Activo	Rosa
+58	ivon23zamo@gmail.com	TEC-1234	estudiante	Activo	Ivonne
+59	trin50m‚nd@gmail.com	TEC-1234	estudiante	Activo	Trinidad
+61	oliv76pera@gmail.com	TEC-1234	estudiante	Activo	Oliver
+62	jos‚14grac@gmail.com	TEC-1234	estudiante	Activo	Joss
+63	sand53su r@gmail.com	TEC-1234	estudiante	Activo	Sandra
+64	jes£58guaj@gmail.com	TEC-1234	estudiante	Activo	Diana
+65	ceci52arme@gmail.com	TEC-1234	estudiante	Activo	Cecilia
+66	jos‚69ques@gmail.com	TEC-1234	estudiante	Activo	María
+67	luis29de l@gmail.com	TEC-1234	estudiante	Activo	Luis
+68	juan45valv@gmail.com	TEC-1234	estudiante	Activo	Juan
+69	frid18hurt@gmail.com	TEC-1234	estudiante	Activo	Freddy
+70	clar60gran@gmail.com	TEC-1234	estudiante	Activo	Clara
+71	nadi84baca@gmail.com	TEC-1234	estudiante	Activo	Naomi
+72	salm82mira@gmail.com	TEC-1234	estudiante	Activo	Salomón
+73	cris43qui¤@gmail.com	TEC-1234	estudiante	Activo	Cristo
+74	amad41lope@gmail.com	TEC-1234	estudiante	Activo	Amanda
+75	guil46sald@gmail.com	TEC-1234	estudiante	Activo	Guisella
+76	sof¡41casa@gmail.com	TEC-1234	estudiante	Activo	Sofía
+77	dali62oroz@gmail.com	TEC-1234	estudiante	Activo	Dalia
+78	juan84cord@gmail.com	TEC-1234	estudiante	Activo	Juan
+79	humb85delg@gmail.com	TEC-1234	estudiante	Activo	Humberto
+80	leon56mont@gmail.com	TEC-1234	estudiante	Activo	León
+81	beni25pedr@gmail.com	TEC-1234	estudiante	Activo	Benito
+82	alej99osor@gmail.com	TEC-1234	estudiante	Activo	Alejandro
+83	deli31palo@gmail.com	TEC-1234	estudiante	Activo	Delia
+84	mart37mald@gmail.com	TEC-1234	estudiante	Activo	Marta
+85	arac90vall@gmail.com	TEC-1234	estudiante	Activo	Aracaseres
+86	este76v‚li@gmail.com	TEC-1234	estudiante	Activo	Esteban
+87	oliv46cava@gmail.com	TEC-1234	estudiante	Activo	Oliver
+88	mari67zamo@gmail.com	TEC-1234	estudiante	Activo	Mari
+89	hele69laur@gmail.com	TEC-1234	estudiante	Activo	Helén
+90	flor20figu@gmail.com	TEC-1234	estudiante	Activo	Flor
+91	leon64grij@gmail.com	TEC-1234	estudiante	Activo	León Diego
+92	lore39luce@gmail.com	TEC-1234	estudiante	Activo	Lorenzo
+93	tom 48bahe@gmail.com	TEC-1234	estudiante	Activo	Tomás
+94	omar70llam@gmail.com	TEC-1234	estudiante	Activo	Omar
+95	juan40ocas@gmail.com	TEC-1234	estudiante	Activo	Juan Pablo
+96	emil60vill@gmail.com	TEC-1234	estudiante	Activo	Emilio
+97	espe10moya@gmail.com	TEC-1234	estudiante	Activo	Esperanza 
+98	benj89cent@gmail.com	TEC-1234	estudiante	Activo	Benjamín
+99	clar91jim‚@gmail.com	TEC-1234	estudiante	Activo	Clara
+100	leon41merc@gmail.com	TEC-1234	estudiante	Activo	Leónidas
+101	cami95vall@gmail.com	TEC-1234	estudiante	Activo	Camila
+102	bian32guzm@gmail.com	TEC-1234	estudiante	Activo	Brian
+103	artu93carr@gmail.com	TEC-1234	estudiante	Activo	Arturo
+104	cris35men‚@gmail.com	TEC-1234	estudiante	Activo	Cristina
+105	benj39ter @gmail.com	TEC-1234	docente	Activo	Benjamino
+106	cari11grie@gmail.com	TEC-1234	docente	Activo	Carito
+107	mar¡18avil@gmail.com	TEC-1234	docente	Activo	María
+108	brun46vega@gmail.com	TEC-1234	docente	Activo	Bruno
+109	susa30porr@gmail.com	TEC-1234	docente	Activo	Susana
+110	c‚sa92haro@gmail.com	TEC-1234	docente	Activo	Camilo
+111	leon81game@gmail.com	TEC-1234	docente	Activo	Leónidas
+112	luis85fier@gmail.com	TEC-1234	docente	Activo	Luis
+113	rosa44gast@gmail.com	TEC-1234	docente	Activo	Rosa
+114	viol64de a@gmail.com	TEC-1234	docente	Activo	Violeta
+115	emil74sisn@gmail.com	TEC-1234	docente	Activo	Emilio
+116	d‚bo10rodr@gmail.com	TEC-1234	docente	Activo	Marc
+117	rodr75barr@gmail.com	TEC-1234	docente	Activo	Alex
+118	fran41de l@gmail.com	TEC-1234	docente	Activo	Franccesco
+119	flor23cand@gmail.com	TEC-1234	docente	Activo	Luke 
+120	jos‚72casa@gmail.com	TEC-1234	docente	Activo	Doriane
+121	patr91guil@gmail.com	TEC-1234	docente	Activo	Patricia
+122	nico22paz@gmail.com	TEC-1234	docente	Activo	Nicolás
+123	bern94de a@gmail.com	TEC-1234	docente	Activo	Bernardo
+124	deli32angu@gmail.com	TEC-1234	docente	Activo	Deligurt
+125	alma15rioj@gmail.com	TEC-1234	administrativo	Activo	Alma
+126	elvi15sote@gmail.com	TEC-1234	administrativo	Activo	Elvira
+127	roc¡94gonz@gmail.com	TEC-1234	administrativo	Activo	Rocío
+128	mitz40arch@gmail.com	TEC-1234	administrativo	Activo	Mitocondria
+129	anto19ni¤o@gmail.com	TEC-1234	administrativo	Activo	Antonio
+130	dulc29zara@gmail.com	TEC-1234	administrativo	Activo	Dulceida
+131	judi31quez@gmail.com	TEC-1234	administrativo	Activo	Jurdin
+132	aure68mire@gmail.com	TEC-1234	administrativo	Activo	Aurerio
+133	ana15muro@gmail.com	TEC-1234	administrativo	Activo	Ana
+134	edua74ram¡@gmail.com	TEC-1234	administrativo	Activo	Eduardo
+60	sera55ceja@gmail.com	TEC-1234	estudiante	Activo	Serafín
+\.
+
+
+--
+-- TOC entry 5159 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: becas_estudiante_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.becas_estudiante_id_seq', 20, true);
+
+
+--
+-- TOC entry 5160 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: becas_id_beca_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.becas_id_beca_seq', 5, true);
+
+
+--
+-- TOC entry 5161 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: bienes_id_producto_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.bienes_id_producto_seq', 30, true);
+
+
+--
+-- TOC entry 5162 (class 0 OID 0)
+-- Dependencies: 226
+-- Name: calendario_institucional_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.calendario_institucional_id_seq', 15, true);
+
+
+--
+-- TOC entry 5163 (class 0 OID 0)
+-- Dependencies: 228
+-- Name: calificaciones_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.calificaciones_id_seq', 51, true);
+
+
+--
+-- TOC entry 5164 (class 0 OID 0)
+-- Dependencies: 230
+-- Name: carreras_id_carrera_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.carreras_id_carrera_seq', 5, true);
+
+
+--
+-- TOC entry 5165 (class 0 OID 0)
+-- Dependencies: 232
+-- Name: departamentos_id_departamento_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.departamentos_id_departamento_seq', 5, true);
+
+
+--
+-- TOC entry 5166 (class 0 OID 0)
+-- Dependencies: 235
+-- Name: docente_info_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.docente_info_id_seq', 44, true);
+
+
+--
+-- TOC entry 5167 (class 0 OID 0)
+-- Dependencies: 239
+-- Name: estudiante_info_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.estudiante_info_id_seq', 147, true);
+
+
+--
+-- TOC entry 5168 (class 0 OID 0)
+-- Dependencies: 241
+-- Name: grupos_id_grupo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.grupos_id_grupo_seq', 10, true);
+
+
+--
+-- TOC entry 5169 (class 0 OID 0)
+-- Dependencies: 243
+-- Name: horarios_id_horario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.horarios_id_horario_seq', 27, true);
+
+
+--
+-- TOC entry 5170 (class 0 OID 0)
+-- Dependencies: 246
+-- Name: materias_id_materia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.materias_id_materia_seq', 7, true);
+
+
+--
+-- TOC entry 5171 (class 0 OID 0)
+-- Dependencies: 248
+-- Name: registro_pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.registro_pagos_id_pago_seq', 121, true);
+
+
+--
+-- TOC entry 5172 (class 0 OID 0)
+-- Dependencies: 251
+-- Name: sedes_id_sede_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.sedes_id_sede_seq', 5, true);
+
+
+--
+-- TOC entry 5173 (class 0 OID 0)
+-- Dependencies: 253
+-- Name: sedes_info_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.sedes_info_id_seq', 10, true);
+
+
+--
+-- TOC entry 5174 (class 0 OID 0)
+-- Dependencies: 255
+-- Name: usuarios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.usuarios_id_seq', 152, true);
+
+
+--
+-- TOC entry 4877 (class 2606 OID 26509)
+-- Name: administrativo administrativo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.administrativo
+    ADD CONSTRAINT administrativo_pkey PRIMARY KEY (num_cedula);
+
+
+--
+-- TOC entry 4879 (class 2606 OID 26511)
+-- Name: aulas aulas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.aulas
+    ADD CONSTRAINT aulas_pkey PRIMARY KEY (id_aula);
+
+
+--
+-- TOC entry 4883 (class 2606 OID 26513)
+-- Name: becas_estudiante becas_estudiante_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.becas_estudiante
+    ADD CONSTRAINT becas_estudiante_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4881 (class 2606 OID 26515)
+-- Name: becas becas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.becas
+    ADD CONSTRAINT becas_pkey PRIMARY KEY (id_beca);
+
+
+--
+-- TOC entry 4885 (class 2606 OID 26517)
+-- Name: bienes bienes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bienes
+    ADD CONSTRAINT bienes_pkey PRIMARY KEY (id_producto);
+
+
+--
+-- TOC entry 4887 (class 2606 OID 26519)
+-- Name: calendario_institucional calendario_institucional_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.calendario_institucional
+    ADD CONSTRAINT calendario_institucional_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4889 (class 2606 OID 26521)
+-- Name: calificaciones calificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.calificaciones
+    ADD CONSTRAINT calificaciones_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4891 (class 2606 OID 26523)
+-- Name: carreras carreras_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.carreras
+    ADD CONSTRAINT carreras_pkey PRIMARY KEY (id_carrera);
+
+
+--
+-- TOC entry 4893 (class 2606 OID 26525)
+-- Name: departamentos departamentos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.departamentos
+    ADD CONSTRAINT departamentos_pkey PRIMARY KEY (id_departamento);
+
+
+--
+-- TOC entry 4897 (class 2606 OID 26527)
+-- Name: docente_info docente_info_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.docente_info
+    ADD CONSTRAINT docente_info_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4895 (class 2606 OID 26529)
+-- Name: docente docente_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.docente
+    ADD CONSTRAINT docente_pkey PRIMARY KEY (num_cedula);
+
+
+--
+-- TOC entry 4899 (class 2606 OID 26531)
+-- Name: empleados empleados_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.empleados
+    ADD CONSTRAINT empleados_pkey PRIMARY KEY (num_cedula);
+
+
+--
+-- TOC entry 4903 (class 2606 OID 26533)
+-- Name: estudiante_info estudiante_info_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiante_info
+    ADD CONSTRAINT estudiante_info_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4901 (class 2606 OID 26535)
+-- Name: estudiante estudiante_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiante
+    ADD CONSTRAINT estudiante_pkey PRIMARY KEY (num_cedula);
+
+
+--
+-- TOC entry 4905 (class 2606 OID 26537)
+-- Name: grupos grupos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.grupos
+    ADD CONSTRAINT grupos_pkey PRIMARY KEY (id_grupo);
+
+
+--
+-- TOC entry 4907 (class 2606 OID 26539)
+-- Name: horarios horarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.horarios
+    ADD CONSTRAINT horarios_pkey PRIMARY KEY (id_horario);
+
+
+--
+-- TOC entry 4909 (class 2606 OID 26541)
+-- Name: materias materias_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.materias
+    ADD CONSTRAINT materias_pkey PRIMARY KEY (id_materia);
+
+
+--
+-- TOC entry 4911 (class 2606 OID 26543)
+-- Name: registro_pagos registro_pagos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.registro_pagos
+    ADD CONSTRAINT registro_pagos_pkey PRIMARY KEY (id_pago);
+
+
+--
+-- TOC entry 4913 (class 2606 OID 26545)
+-- Name: salarios salarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.salarios
+    ADD CONSTRAINT salarios_pkey PRIMARY KEY (num_cedula);
+
+
+--
+-- TOC entry 4917 (class 2606 OID 26547)
+-- Name: sedes_info sedes_info_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sedes_info
+    ADD CONSTRAINT sedes_info_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4915 (class 2606 OID 26549)
+-- Name: sedes sedes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sedes
+    ADD CONSTRAINT sedes_pkey PRIMARY KEY (id_sede);
+
+
+--
+-- TOC entry 4919 (class 2606 OID 26749)
+-- Name: usuarios unique_usuario; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuarios
+    ADD CONSTRAINT unique_usuario UNIQUE (usuario);
+
+
+--
+-- TOC entry 4921 (class 2606 OID 26551)
+-- Name: usuarios usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuarios
+    ADD CONSTRAINT usuarios_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4962 (class 2620 OID 26552)
+-- Name: carreras trigger_actualizar_estado_carreras; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_actualizar_estado_carreras AFTER UPDATE OF estado ON public.carreras FOR EACH ROW EXECUTE FUNCTION public.actualizar_estado_carreras();
+
+
+--
+-- TOC entry 4963 (class 2620 OID 26553)
+-- Name: departamentos trigger_actualizar_estado_departamentos; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_actualizar_estado_departamentos AFTER UPDATE OF estado ON public.departamentos FOR EACH ROW EXECUTE FUNCTION public.actualizar_estado_departamentos();
+
+
+--
+-- TOC entry 4968 (class 2620 OID 26554)
+-- Name: materias trigger_actualizar_estado_materias; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_actualizar_estado_materias AFTER UPDATE OF estado ON public.materias FOR EACH ROW EXECUTE FUNCTION public.actualizar_estado_materias();
+
+
+--
+-- TOC entry 4969 (class 2620 OID 26555)
+-- Name: sedes trigger_actualizar_estado_sedes; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_actualizar_estado_sedes AFTER UPDATE OF estado ON public.sedes FOR EACH ROW EXECUTE FUNCTION public.actualizar_estado_sedes();
+
+
+--
+-- TOC entry 4967 (class 2620 OID 26556)
+-- Name: estudiante_info trigger_insertar_calificaciones; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_insertar_calificaciones AFTER INSERT ON public.estudiante_info FOR EACH ROW EXECUTE FUNCTION public.insertar_calificaciones();
+
+
+--
+-- TOC entry 4960 (class 2620 OID 26557)
+-- Name: administrativo trigger_sincronizar_empleados_administrativo; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_sincronizar_empleados_administrativo AFTER INSERT OR UPDATE ON public.administrativo FOR EACH ROW EXECUTE FUNCTION public.sincronizar_empleados();
+
+
+--
+-- TOC entry 4964 (class 2620 OID 26558)
+-- Name: docente trigger_sincronizar_empleados_docente; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_sincronizar_empleados_docente AFTER INSERT OR UPDATE ON public.docente FOR EACH ROW EXECUTE FUNCTION public.sincronizar_empleados();
+
+
+--
+-- TOC entry 4961 (class 2620 OID 26559)
+-- Name: administrativo trigger_sincronizar_usuario_administrativo; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_sincronizar_usuario_administrativo AFTER INSERT OR UPDATE OF correo, nombre ON public.administrativo FOR EACH ROW EXECUTE FUNCTION public.sincronizar_usuario();
+
+
+--
+-- TOC entry 4965 (class 2620 OID 26560)
+-- Name: docente trigger_sincronizar_usuario_docentes; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_sincronizar_usuario_docentes AFTER INSERT OR UPDATE OF correo, nombre ON public.docente FOR EACH ROW EXECUTE FUNCTION public.sincronizar_usuario();
+
+
+--
+-- TOC entry 4966 (class 2620 OID 26561)
+-- Name: estudiante trigger_sincronizar_usuario_estudiantes; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_sincronizar_usuario_estudiantes AFTER INSERT OR UPDATE OF correo, nombre ON public.estudiante FOR EACH ROW EXECUTE FUNCTION public.sincronizar_usuario();
+
+
+--
+-- TOC entry 4922 (class 2606 OID 26562)
+-- Name: administrativo administrativo_sede_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.administrativo
+    ADD CONSTRAINT administrativo_sede_fkey FOREIGN KEY (sede) REFERENCES public.sedes(id_sede);
+
+
+--
+-- TOC entry 4923 (class 2606 OID 26567)
+-- Name: aulas aulas_id_sede_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.aulas
+    ADD CONSTRAINT aulas_id_sede_fkey FOREIGN KEY (id_sede) REFERENCES public.sedes(id_sede);
+
+
+--
+-- TOC entry 4924 (class 2606 OID 26572)
+-- Name: becas_estudiante becas_estudiante_id_beca_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.becas_estudiante
+    ADD CONSTRAINT becas_estudiante_id_beca_fkey FOREIGN KEY (id_beca) REFERENCES public.becas(id_beca);
+
+
+--
+-- TOC entry 4925 (class 2606 OID 26577)
+-- Name: becas_estudiante becas_estudiante_id_estudiante_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.becas_estudiante
+    ADD CONSTRAINT becas_estudiante_id_estudiante_fkey FOREIGN KEY (id_estudiante) REFERENCES public.estudiante(num_cedula);
+
+
+--
+-- TOC entry 4926 (class 2606 OID 26582)
+-- Name: bienes bienes_id_sede_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bienes
+    ADD CONSTRAINT bienes_id_sede_fkey FOREIGN KEY (id_sede) REFERENCES public.sedes(id_sede);
+
+
+--
+-- TOC entry 4927 (class 2606 OID 26587)
+-- Name: calendario_institucional calendario_institucional_id_sede_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.calendario_institucional
+    ADD CONSTRAINT calendario_institucional_id_sede_fkey FOREIGN KEY (id_sede) REFERENCES public.sedes(id_sede);
+
+
+--
+-- TOC entry 4928 (class 2606 OID 26592)
+-- Name: calificaciones calificaciones_id_carrera_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.calificaciones
+    ADD CONSTRAINT calificaciones_id_carrera_fkey FOREIGN KEY (id_carrera) REFERENCES public.carreras(id_carrera);
+
+
+--
+-- TOC entry 4929 (class 2606 OID 26597)
+-- Name: calificaciones calificaciones_id_docente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.calificaciones
+    ADD CONSTRAINT calificaciones_id_docente_fkey FOREIGN KEY (id_docente) REFERENCES public.docente(num_cedula);
+
+
+--
+-- TOC entry 4930 (class 2606 OID 26602)
+-- Name: calificaciones calificaciones_id_estudiante_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.calificaciones
+    ADD CONSTRAINT calificaciones_id_estudiante_fkey FOREIGN KEY (id_estudiante) REFERENCES public.estudiante(num_cedula);
+
+
+--
+-- TOC entry 4931 (class 2606 OID 26607)
+-- Name: calificaciones calificaciones_id_grupo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.calificaciones
+    ADD CONSTRAINT calificaciones_id_grupo_fkey FOREIGN KEY (id_grupo) REFERENCES public.grupos(id_grupo);
+
+
+--
+-- TOC entry 4932 (class 2606 OID 26612)
+-- Name: calificaciones calificaciones_id_materia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.calificaciones
+    ADD CONSTRAINT calificaciones_id_materia_fkey FOREIGN KEY (id_materia) REFERENCES public.materias(id_materia);
+
+
+--
+-- TOC entry 4934 (class 2606 OID 26617)
+-- Name: docente_info docente_info_id_carrera_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.docente_info
+    ADD CONSTRAINT docente_info_id_carrera_fkey FOREIGN KEY (id_carrera) REFERENCES public.carreras(id_carrera);
+
+
+--
+-- TOC entry 4935 (class 2606 OID 26622)
+-- Name: docente_info docente_info_id_departamento_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.docente_info
+    ADD CONSTRAINT docente_info_id_departamento_fkey FOREIGN KEY (id_departamento) REFERENCES public.departamentos(id_departamento);
+
+
+--
+-- TOC entry 4936 (class 2606 OID 26627)
+-- Name: docente_info docente_info_id_docente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.docente_info
+    ADD CONSTRAINT docente_info_id_docente_fkey FOREIGN KEY (id_docente) REFERENCES public.docente(num_cedula);
+
+
+--
+-- TOC entry 4937 (class 2606 OID 26632)
+-- Name: docente_info docente_info_id_grupo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.docente_info
+    ADD CONSTRAINT docente_info_id_grupo_fkey FOREIGN KEY (id_grupo) REFERENCES public.grupos(id_grupo);
+
+
+--
+-- TOC entry 4938 (class 2606 OID 26637)
+-- Name: docente_info docente_info_id_materia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.docente_info
+    ADD CONSTRAINT docente_info_id_materia_fkey FOREIGN KEY (id_materia) REFERENCES public.materias(id_materia);
+
+
+--
+-- TOC entry 4939 (class 2606 OID 26642)
+-- Name: docente_info docente_info_id_sede_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.docente_info
+    ADD CONSTRAINT docente_info_id_sede_fkey FOREIGN KEY (id_sede) REFERENCES public.sedes(id_sede);
+
+
+--
+-- TOC entry 4940 (class 2606 OID 26647)
+-- Name: estudiante_info estudiante_info_id_carrera_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiante_info
+    ADD CONSTRAINT estudiante_info_id_carrera_fkey FOREIGN KEY (id_carrera) REFERENCES public.carreras(id_carrera);
+
+
+--
+-- TOC entry 4941 (class 2606 OID 26652)
+-- Name: estudiante_info estudiante_info_id_departamento_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiante_info
+    ADD CONSTRAINT estudiante_info_id_departamento_fkey FOREIGN KEY (id_departamento) REFERENCES public.departamentos(id_departamento);
+
+
+--
+-- TOC entry 4942 (class 2606 OID 26657)
+-- Name: estudiante_info estudiante_info_id_estudiante_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiante_info
+    ADD CONSTRAINT estudiante_info_id_estudiante_fkey FOREIGN KEY (id_estudiante) REFERENCES public.estudiante(num_cedula);
+
+
+--
+-- TOC entry 4943 (class 2606 OID 26662)
+-- Name: estudiante_info estudiante_info_id_grupo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiante_info
+    ADD CONSTRAINT estudiante_info_id_grupo_fkey FOREIGN KEY (id_grupo) REFERENCES public.grupos(id_grupo);
+
+
+--
+-- TOC entry 4944 (class 2606 OID 26667)
+-- Name: estudiante_info estudiante_info_id_materia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiante_info
+    ADD CONSTRAINT estudiante_info_id_materia_fkey FOREIGN KEY (id_materia) REFERENCES public.materias(id_materia);
+
+
+--
+-- TOC entry 4945 (class 2606 OID 26672)
+-- Name: estudiante_info estudiante_info_id_sede_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiante_info
+    ADD CONSTRAINT estudiante_info_id_sede_fkey FOREIGN KEY (id_sede) REFERENCES public.sedes(id_sede);
+
+
+--
+-- TOC entry 4933 (class 2606 OID 26750)
+-- Name: carreras fk_departamento; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.carreras
+    ADD CONSTRAINT fk_departamento FOREIGN KEY (departamento) REFERENCES public.departamentos(id_departamento);
+
+
+--
+-- TOC entry 4946 (class 2606 OID 26677)
+-- Name: grupos grupos_id_carrera_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.grupos
+    ADD CONSTRAINT grupos_id_carrera_fkey FOREIGN KEY (id_carrera) REFERENCES public.carreras(id_carrera);
+
+
+--
+-- TOC entry 4947 (class 2606 OID 26682)
+-- Name: grupos grupos_id_sede_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.grupos
+    ADD CONSTRAINT grupos_id_sede_fkey FOREIGN KEY (id_sede) REFERENCES public.sedes(id_sede);
+
+
+--
+-- TOC entry 4948 (class 2606 OID 26687)
+-- Name: horarios horarios_id_aula_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.horarios
+    ADD CONSTRAINT horarios_id_aula_fkey FOREIGN KEY (id_aula) REFERENCES public.aulas(id_aula);
+
+
+--
+-- TOC entry 4949 (class 2606 OID 26692)
+-- Name: horarios horarios_id_docente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.horarios
+    ADD CONSTRAINT horarios_id_docente_fkey FOREIGN KEY (id_docente) REFERENCES public.docente(num_cedula);
+
+
+--
+-- TOC entry 4950 (class 2606 OID 26697)
+-- Name: horarios horarios_id_grupo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.horarios
+    ADD CONSTRAINT horarios_id_grupo_fkey FOREIGN KEY (id_grupo) REFERENCES public.grupos(id_grupo);
+
+
+--
+-- TOC entry 4951 (class 2606 OID 26702)
+-- Name: horarios horarios_id_materia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.horarios
+    ADD CONSTRAINT horarios_id_materia_fkey FOREIGN KEY (id_materia) REFERENCES public.materias(id_materia);
+
+
+--
+-- TOC entry 4952 (class 2606 OID 26707)
+-- Name: horarios horarios_id_sede_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.horarios
+    ADD CONSTRAINT horarios_id_sede_fkey FOREIGN KEY (id_sede) REFERENCES public.sedes(id_sede);
+
+
+--
+-- TOC entry 4953 (class 2606 OID 26712)
+-- Name: materias_carrera materias_carrera_id_carrera_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.materias_carrera
+    ADD CONSTRAINT materias_carrera_id_carrera_fkey FOREIGN KEY (id_carrera) REFERENCES public.carreras(id_carrera);
+
+
+--
+-- TOC entry 4954 (class 2606 OID 26717)
+-- Name: materias_carrera materias_carrera_id_materia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.materias_carrera
+    ADD CONSTRAINT materias_carrera_id_materia_fkey FOREIGN KEY (id_materia) REFERENCES public.materias(id_materia);
+
+
+--
+-- TOC entry 4955 (class 2606 OID 26722)
+-- Name: registro_pagos registro_pagos_num_cedula_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.registro_pagos
+    ADD CONSTRAINT registro_pagos_num_cedula_fkey FOREIGN KEY (num_cedula) REFERENCES public.empleados(num_cedula);
+
+
+--
+-- TOC entry 4956 (class 2606 OID 26727)
+-- Name: salarios salarios_num_cedula_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.salarios
+    ADD CONSTRAINT salarios_num_cedula_fkey FOREIGN KEY (num_cedula) REFERENCES public.empleados(num_cedula);
+
+
+--
+-- TOC entry 4957 (class 2606 OID 26732)
+-- Name: sedes_info sedes_info_id_carrera_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sedes_info
+    ADD CONSTRAINT sedes_info_id_carrera_fkey FOREIGN KEY (id_carrera) REFERENCES public.carreras(id_carrera);
+
+
+--
+-- TOC entry 4958 (class 2606 OID 26737)
+-- Name: sedes_info sedes_info_id_departamento_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sedes_info
+    ADD CONSTRAINT sedes_info_id_departamento_fkey FOREIGN KEY (id_departamento) REFERENCES public.departamentos(id_departamento);
+
+
+--
+-- TOC entry 4959 (class 2606 OID 26742)
+-- Name: sedes_info sedes_info_id_sede_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sedes_info
+    ADD CONSTRAINT sedes_info_id_sede_fkey FOREIGN KEY (id_sede) REFERENCES public.sedes(id_sede);
+
+
+-- Completed on 2025-05-02 14:02:13
+
+--
+-- PostgreSQL database dump complete
+--
+
