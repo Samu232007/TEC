@@ -1,6 +1,6 @@
 <?php
 // Parámetros de conexión
-$host = "tec-database.cwpm8282m1nc.us-east-1.rds.amazonaws.com";
+$host = "database-1.cwpm8282m1nc.us-east-1.rds.amazonaws.com";
 $dbname = "Base_datos_TEC";
 $user = "postgres";
 $password = "SamuMoraChaves23";
