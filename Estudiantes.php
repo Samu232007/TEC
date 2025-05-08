@@ -30,7 +30,7 @@ if (!isset($_SESSION['rol']) || ($_SESSION['rol'] !== 'estudiante' && $_SESSION[
             <ul>
                 <li><button id="btn-inicio">Inicio</button></li>
                 <li><button id="btn-estudiantes">Mis datos</button></li>
-                <li><button id="btn-carreras">Carreras y Materias</button></li>
+                <li><button id="btn-notas">Notas</button></li>
             </ul>
             <form action="logout_C" method="POST">
                 <button class="logout-button">Cerrar sesión</button>
@@ -113,10 +113,10 @@ if (!isset($_SESSION['rol']) || ($_SESSION['rol'] !== 'estudiante' && $_SESSION[
         cargarDatos('materias', 'tarjeta2'); 
     });
 
-    document.getElementById('btn-carreras').addEventListener('click', function() {
+    document.getElementById('btn-notas').addEventListener('click', function() {
         limpiarDashboard(); // Limpia el dashboard
-        crearTarjeta('tarjeta1', 'Carreras y Materias'); // Crea la tarjeta para carreras y materias
-        cargarDatos('carreras_materias', 'tarjeta1'); // Carga los datos en la tarjeta
+        crearTarjeta('tarjeta1', 'Mis notas'); // Crea la tarjeta para carreras y materias
+        cargarDatos('notas', 'tarjeta1'); // Carga los datos en la tarjeta
     });
 </script>
 
