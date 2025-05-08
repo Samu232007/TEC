@@ -94,12 +94,15 @@ if (isset($_GET['accion'])) {
 
         break;
 
-        case 'carreras_materias':
-            // Consulta para obtener las carreras y materias de cada estudiante
-            $query = "SELECT e.num_cedula, e.nombre, c.nombre_carrera, m.nombre_materia 
-                      FROM estudiantes e
-                      JOIN carreras c ON e.id_carrera = c.id_carrera
-                      JOIN materias m ON c.id_carrera = m.id_carrera";
+        case 'notas':
+            // Consulta para obtener las notas de cada estudiante
+            $query = "SELECT c.id_estudiante, c.id_docente, c.id_carrera, c.id_materia, c.cuatrimestre, c.curso_lectivo, c.nota, ca.nombre, m.nombre_materia, d.nombre
+                      FROM calificaciones c
+                      JOIN carreras ca ON e.id_carrera = c.id_carrera
+                      JOIN materias m ON c.id_carrera = m.id_carrera
+                      JOIN docente d ON c.id_docente = d.num_cedula
+                      WHERE id_estudiante = '$ID'
+                      ";
             $result = pg_query($conexion, $query);
 
             if (!$result) {
@@ -110,17 +113,21 @@ if (isset($_GET['accion'])) {
             if (pg_num_rows($result) > 0) {
                 echo "<table border='1'>
                         <tr>
-                            <th>ID Estudiante</th>
-                            <th>Nombre</th>
                             <th>Carrera</th>
                             <th>Materia</th>
+                            <th>Cuatrimestre</th>
+                            <th>Docente</th>
+                            <th>Curso Lectivo</th>
+                            <th>Nota</th>
                         </tr>";
                 while ($row = pg_fetch_assoc($result)) {
                     echo "<tr>
-                            <td>{$row['num_cedula']}</td>
-                            <td>{$row['nombre']}</td>
-                            <td>{$row['nombre_carrera']}</td>
-                            <td>{$row['nombre_materia']}</td>
+                            <td>{$row['ca.nombre']}</td>
+                            <td>{$row['m.nombre_materia']}</td>
+                            <td>{$row['c.cuatrimestre']}</td>
+                            <td>{$row['d.nombre']}</td>
+                            <td>{$row['c.curso_lectivo']}</td>
+                            <td>{$row['c.nota']}</td>
                           </tr>";
                 }
                 echo "</table>";
